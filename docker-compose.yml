@@ -1,0 +1,62 @@
+services:
+  bot:
+    build: .
+    command: python -m bot.main  # <--- ВОТ ЭТА СТРОКА БЫЛА ПРОПУЩЕНА!
+    volumes:
+      - ./data:/app/data
+      - ./scripts:/app/scripts
+      - ./staraya bd:/app/staraya bd
+      - ./bot:/app/bot
+    env_file:
+      - .env
+    environment:
+      VK_BOT_TOKEN: ""
+    restart: always
+
+  vk_bot:
+    build: .
+    command: python -m vk_bot.main
+    volumes:
+      - ./data:/app/data
+      - ./scripts:/app/scripts
+      - ./staraya bd:/app/staraya bd
+      - ./bot:/app/bot
+      - ./vk_bot:/app/vk_bot
+    env_file:
+      - .env
+    restart: always
+
+  admin_web:
+    build:
+      context: .
+      dockerfile: admin_web/Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./scripts:/app/scripts
+      - ./staraya bd:/app/staraya bd
+      - ./admin_web:/app/admin_web
+      - ./bot:/app/bot
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - bot
+    restart: always
+
+  mtproxy:
+    image: telegrammessenger/proxy:latest
+    container_name: mtproxy
+    restart: unless-stopped
+    ports:
+      - "${MTPROXY_PORT:-8888}:443"
+    environment:
+      - SECRET=${MTPROXY_SECRET:-}
+    volumes:
+      - ./data/mtproxy:/data
+    profiles:
+      - mtproxy
+
+volumes:
+  data:

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card p-3 mb-4">
+    <form class="d-flex gap-2">
+        <input type="text" name="q" class="form-control" placeholder="Поиск по ID, username или email..." value="{{ q }}">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
+    </form>
+</div>
+
+<div class="card p-3 mb-4 border-warning">
+    <h6 class="fw-bold mb-1">💰 Стандартная цена 1K для всех</h6>
+    <div class="small text-muted mb-2">
+        Применяется ко всем пользователям, у кого <b>не задана</b> своя (кастомная) цена.
+        Пользователей с индивидуальной ценой <b>не меняет</b>. Сейчас стандарт: <b>{{ standard_price }} ₽</b>.
+    </div>
+    <form action="/users/set_standard_price" method="post"
+          onsubmit="return confirm('Поставить стандартную цену 1K = ' + this.price.value + ' ₽ для всех пользователей без кастомной цены?');"
+          class="row g-2 align-items-end">
+        <div class="col-auto">
+            <label class="small text-muted">Новая стандартная цена (₽)</label>
+            <input type="number" name="price" class="form-control" value="{{ standard_price }}" min="1" required style="max-width:160px;">
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-warning">Применить ко всем (кроме кастомных)</button>
+        </div>
+    </form>
+</div>
+
+<div class="row g-3">
+    {% for user in users %}
+    <div class="col-12 col-md-6">
+        <div class="card p-3 h-100">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h5 class="mb-0">{% if user.site_email %}{{ user.site_email }}{% else %}ID: {{ user.id }}{% endif %}</h5>
+                    <div class="text-muted">{% if user.site_email %}ID: {{ user.id }}{% else %}@{{ user.username or "нет" }}{% endif %}</div>
+                </div>
+                <div class="badge bg-primary fs-6">Баланс: {{ user.balance }} ₽</div>
+            </div>
+            
+            <hr class="my-2">
+            <h6 class="small fw-bold">Изменить баланс:</h6>
+            <form action="/users/edit_balance" method="post">
+                <input type="hidden" name="user_id" value="{{ user.id }}">
+                <div class="row g-2 mb-2">
+                    <div class="col">
+                        <label class="small text-muted">Баланс (₽)</label>
+                        <input type="number" name="amount" class="form-control" value="{{ user.balance }}" required>
+                    </div>
+                    <div class="col">
+                        <label class="small text-muted">Цена фото (₽)
+                            {% if user.custom_1k_price_rub is not none %}
+                                <span class="badge bg-info">кастомная</span>
+                            {% else %}
+                                <span class="badge bg-secondary">стандарт</span>
+                            {% endif %}
+                        </label>
+                        <input type="number" name="price" class="form-control" value="{{ user.generation_price or 25 }}" min="1" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success w-100">Сохранить</button>
+            </form>
+
+            <div class="mt-3">
+                <form action="/admin/block_user" method="post">
+                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                    <input type="hidden" name="block" value="{{ 0 if user.blocked else 1 }}">
+                    {% if user.blocked %}
+                        <button type="submit" class="btn btn-sm btn-outline-success w-100">Разблокировать</button>
+                    {% else %}
+                        <button type="submit" class="btn btn-sm btn-outline-danger w-100">Заблокировать</button>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+
+

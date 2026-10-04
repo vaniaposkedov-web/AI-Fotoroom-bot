@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h2 class="h3 mb-0 text-gray-800"><i class="bi bi-cash-stack me-2"></i>История баланса</h2>
+            <div class="text-muted">Аналитика пополнений и списаний</div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Ручная корректировка выручки</h6>
+        </div>
+        <div class="card-body">
+            <form action="/balance_history/revenue_correction" method="post" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Сумма корректировки (₽)</label>
+                    <input type="number" class="form-control" name="amount" value="{{ revenue_manual_correction or 0 }}">
+                    <div class="form-text">Можно указать плюс или минус. Влияет на выручку текущего месяца.</div>
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label">Комментарий</label>
+                    <input type="text" class="form-control" name="note" maxlength="500" value="{{ revenue_manual_correction_note or '' }}" placeholder="Например: корректировка по внешней оплате">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Сохранить корректировку</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Пополнения (текущий мес)</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">+{{ report[0] or 0 }} ₽</div>
+                            <div class="text-muted small mt-1">Прошлый месяц: +{{ prev_report[0] or 0 }} ₽</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-arrow-up-circle fs-2 text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Списания (текущий мес)</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">-{{ report[1] or 0 }} ₽</div>
+                            <div class="text-muted small mt-1">Прошлый месяц: -{{ prev_report[1] or 0 }} ₽</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-arrow-down-circle fs-2 text-danger"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Всего операций (мес)</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ report[2] or 0 }}</div>
+                            <div class="small text-muted mt-1">
+                                <i class="bi bi-image"></i> 1K: {{ month_1k }} &nbsp;|&nbsp; 4K: {{ month_4k }}<br>
+                                <i class="bi bi-camera-video"></i> Видео: {{ month_video }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-journal-text fs-2 text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Выручка по месяцам</div>
+                            <div class="mt-1">
+                                {% for m_row in monthly_stats[:3] %}
+                                <div class="small d-flex justify-content-between">
+                                    <span>{{ m_row[0] }}:</span>
+                                    <span class="fw-bold">{{ m_row[1] or 0 }} ₽</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Динамика пополнений (30 дней)</h6>
+        </div>
+        <div class="card-body">
+            <div class="chart-area" style="height: 300px;">
+                <canvas id="balanceChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Последние изменения</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Дата</th>
+                            <th>Пользователь</th>
+                            <th>Тип</th>
+                            <th>Сумма</th>
+                            <th>Новый баланс</th>
+                            <th>Описание</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in history %}
+                        <tr>
+                            <td>{{ item[6] }}</td>
+                            <td>
+                                <a href="/users?q={{ item[1] }}" class="text-decoration-none">
+                                    {{ item[7] or item[1] }}
+                                </a>
+                            </td>
+                            <td>
+                                {% if item[4] == 'recharge' %}
+                                <span class="badge bg-success">Пополнение</span>
+                                {% elif item[4] == 'generation' %}
+                                <span class="badge bg-info">Генерация</span>
+                                {% elif item[4] == 'admin_edit' %}
+                                <span class="badge bg-warning">Админ</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ item[4] }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="fw-bold {% if item[2] > 0 %}text-success{% else %}text-danger{% endif %}">
+                                {{ '+' if item[2] > 0 }}{{ item[2] }} ₽
+                            </td>
+                            <td>{{ item[3] }} ₽</td>
+                            <td class="small text-muted">
+                                {% if item[5] %}Изм. админом: {{ item[5] }}{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const genData1k = {{ chart_1k | tojson }};
+const genData4k = {{ chart_4k | tojson }};
+const genDataVideo = {{ chart_video | tojson }};
+
+const ctx = document.getElementById('balanceChart').getContext('2d');
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: {{ chart_labels | tojson }},
+        datasets: [{
+            label: 'Сумма пополнений (₽)',
+            data: {{ chart_values | tojson }},
+            backgroundColor: 'rgba(78, 115, 223, 0.05)',
+            borderColor: 'rgba(78, 115, 223, 1)',
+            pointRadius: 3,
+            pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+            pointBorderColor: 'rgba(78, 115, 223, 1)',
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
+            pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+            pointHitRadius: 10,
+            pointBorderWidth: 2,
+            tension: 0.3,
+            fill: true
+        }]
+    },
+    options: {
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgb(234, 236, 244)',
+                    drawBorder: false,
+                    borderDash: [2],
+                    zeroLineBorderDash: [2]
+                },
+                ticks: {
+                    maxTicksLimit: 5,
+                    padding: 10
+                }
+            },
+            x: {
+                grid: {
+                    display: false,
+                    drawBorder: false
+                },
+                ticks: {
+                    maxTicksLimit: 7
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                callbacks: {
+                    afterBody: function(context) {
+                        const idx = context[0].dataIndex;
+                        return [
+                            '1K: ' + genData1k[idx],
+                            '4K: ' + genData4k[idx],
+                            'Видео: ' + genDataVideo[idx]
+                        ];
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

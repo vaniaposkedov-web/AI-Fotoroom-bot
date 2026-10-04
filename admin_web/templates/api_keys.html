@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .zveno-wrap { max-width: 720px; margin: 0 auto; }
+  .zveno-card {
+    background: linear-gradient(145deg, #1a1d24 0%, #12141a 100%);
+    color: #e8eaef;
+    border-radius: 14px;
+    padding: 1.25rem 1.35rem;
+    margin-bottom: 1.25rem;
+    border: 1px solid rgba(255,255,255,.06);
+    box-shadow: 0 8px 32px rgba(0,0,0,.25);
+  }
+  .zveno-card h5 { color: #fff; font-weight: 600; letter-spacing: .02em; }
+  .zveno-stat {
+    background: rgba(255,255,255,.04);
+    border-radius: 10px;
+    padding: .65rem .85rem;
+    border: 1px solid rgba(255,255,255,.05);
+  }
+  .zveno-stat small { color: #8b93a7; }
+  .zveno-stat b { color: #f0f3f8; font-size: 1.05rem; }
+  .zveno-keys { background: #fafbfc; border-radius: 12px; padding: 1rem 1.1rem; border: 1px solid #e6e9ef; }
+  .zveno-keys h6 { color: #2d3340; font-weight: 600; }
+  .key-mask { font-family: ui-monospace, monospace; font-size: .82rem; color: #4a5568; }
+  .zveno-note { font-size: .8rem; color: #8b93a7; line-height: 1.45; margin-top: .75rem; }
+  .zveno-errors { background: #fff; border-radius: 12px; padding: 1rem 1.1rem; border: 1px solid #e6e9ef; margin-top: 1rem; }
+  .zveno-errors h6 { color: #2d3340; font-weight: 600; }
+  .err-small { font-size: .78rem; color: #6b7280; }
+</style>
+
+<div class="zveno-wrap">
+  <div class="zveno-card">
+    <h5 class="mb-3">ZvenoAI — расходы</h5>
+    <p class="small text-muted mb-3" style="color:#9aa3b2!important;">
+      Расходы Zveno API. Ставка: {{ '%.2f'|format(zveno_usage.flat_rate) }} ₽ / вызов (env <code>ZVENO_FLAT_RATE_PER_CALL_RUB</code>).
+    </p>
+    <div class="row g-2 mb-3">
+      <div class="col-6 col-md-3"><div class="zveno-stat"><small>Потрачено (оценка)</small><div><b>{{ '%.2f'|format(zveno_usage.spent_rub) }} ₽</b></div></div></div>
+      <div class="col-6 col-md-3"><div class="zveno-stat"><small>Бюджет</small><div><b>{{ '%.0f'|format(zveno_usage.total_balance_rub) }} ₽</b></div></div></div>
+      <div class="col-6 col-md-3"><div class="zveno-stat"><small>Остаток</small><div><b>{{ '%.0f'|format(zveno_usage.remaining_rub) }} ₽</b></div></div></div>
+      <div class="col-6 col-md-3"><div class="zveno-stat"><small>Запросов (ok)</small><div><b>{{ zveno_usage.request_count }}</b></div></div></div>
+    </div>
+    <div class="row g-2 small mb-2" style="color:#9aa3b2;">
+      <div class="col-md-4">In tok: {{ zveno_usage.prompt_tokens }}</div>
+      <div class="col-md-4">Out tok: {{ zveno_usage.completion_tokens }}</div>
+      <div class="col-md-4">Σ tok: {{ zveno_usage.total_tokens }}</div>
+    </div>
+    <form action="/api_keys/zveno_budget" method="post" class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label small mb-1" style="color:#9aa3b2;">Бюджет, ₽</label>
+        <input type="text" name="total_balance_rub" class="form-control form-control-sm bg-dark text-light border-secondary"
+               value="{{ '%.0f'|format(zveno_usage.total_balance_rub) }}">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small mb-1" style="color:#9aa3b2;">Комментарий</label>
+        <input type="text" name="note" class="form-control form-control-sm bg-dark text-light border-secondary"
+               value="{{ zveno_usage.note or '' }}" placeholder="Кратко">
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-sm btn-light w-100">Сохранить</button>
+      </div>
+    </form>
+    <p class="zveno-note mb-0">
+      Настройка ставки: <code>ZVENO_FLAT_RATE_PER_CALL_RUB=6.3</code> в .env на сервере.
+    </p>
+  </div>
+
+  <div class="zveno-keys">
+    <h6 class="mb-3">Ключи API</h6>
+    <form action="/api_keys/add" method="post" class="mb-3">
+      <div class="input-group input-group-sm">
+        <input type="text" name="token" class="form-control" placeholder="Новый ключ (sk-…)" required>
+        <button type="submit" class="btn btn-dark">Добавить</button>
+      </div>
+    </form>
+    <div class="table-responsive">
+      <table class="table table-sm table-borderless align-middle mb-0">
+        <thead class="small text-muted">
+          <tr><th>Ключ</th><th>Статус</th><th class="text-end">Действия</th></tr>
+        </thead>
+        <tbody>
+          {% for k in gemini_keys %}
+          <tr class="border-top">
+            <td class="key-mask text-break">
+              {% set t = k.token or '' %}
+              {% if t|length > 22 %}{{ t[:14] }}…{{ t[-6:] }}{% else %}{{ t }}{% endif %}
+            </td>
+            <td>
+              <span class="badge rounded-pill {{ 'bg-success' if k.is_active else 'bg-secondary' }}">
+                {{ "on" if k.is_active else "off" }}
+              </span>
+            </td>
+            <td class="text-end text-nowrap">
+              <a href="/api_keys/toggle/{{ k.id }}" class="btn btn-sm btn-outline-secondary py-0 px-2">вкл/выкл</a>
+              <a href="/api_keys/delete/{{ k.id }}" class="btn btn-sm btn-outline-danger py-0 px-2" onclick="return confirm('Удалить ключ?')">×</a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" class="text-muted small">Ключей пока нет</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="zveno-errors">
+    <h6 class="mb-3">Логи ошибок API (Zveno)</h6>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead class="small text-muted">
+          <tr>
+            <th>Время</th>
+            <th>User</th>
+            <th>Ключ</th>
+            <th>Модель</th>
+            <th>Статус</th>
+            <th>Ошибка</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in zveno_error_rows %}
+          <tr>
+            <td class="err-small text-nowrap">{{ r[0] }}</td>
+            <td class="text-nowrap">{{ r[1] if r[1] else 'n/a' }}</td>
+            <td class="key-mask">{{ r[2] or 'n/a' }}</td>
+            <td class="err-small">{{ r[3] or 'n/a' }}</td>
+            <td><span class="badge bg-warning text-dark">{{ r[4] or 'error' }}</span></td>
+            <td class="err-small text-break">{{ r[5] or '—' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="text-muted small">Ошибок API пока нет</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

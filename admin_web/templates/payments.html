@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card p-3 mb-4">
+    <form class="d-flex gap-2">
+        <input type="text" name="q" class="form-control" placeholder="Поиск по User ID..." value="{{ q }}">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Найти</button>
+    </form>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-white">
+        <h5 class="mb-0"><i class="bi bi-credit-card me-2"></i> История платежей (Subscriptions)</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>User ID</th>
+                    <th>План</th>
+                    <th>Сумма</th>
+                    <th>Статус</th>
+                    <th>Дата</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if payments %}
+                    {% for p in payments %}
+                    <tr>
+                        <td>#{{ p.id }}</td>
+                        <td><code>{{ p.user_id }}</code></td>
+                        <td>{{ p.plan_name or "Custom" }}</td>
+                        <td><span class="badge bg-success">{{ p.amount }} {{ p.currency }}</span></td>
+                        <td>
+                            {% if p.status == 'completed' %}
+                                <span class="badge bg-info">Выполнено</span>
+                            {% else %}
+                                <span class="badge bg-warning">{{ p.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td><small>{{ p.created_at[:16].replace('T', ' ') }}</small></td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">История платежей пуста</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+

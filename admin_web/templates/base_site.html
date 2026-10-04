@@ -1,0 +1,106 @@
+{% set lang = user.language if user else (request.session.get('preferred_lang') or 'ru') %}
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AI-ROOM{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: #1a1a1a;
+            --bg-hover: #252525;
+            --border-color: #2d2d2d;
+            --text-primary: #f5f5f5;
+            --text-muted: #b8b8b8;
+            --text-bright: #ffffff;
+            --accent-green: #22c55e;
+            --accent-green-hover: #16a34a;
+        }
+        body { background: var(--bg-dark); color: var(--text-primary); min-height: 100vh; display: flex; flex-direction: column; }
+        .navbar { background: var(--bg-card) !important; border-bottom: 1px solid var(--border-color); }
+        .navbar-brand { font-weight: bold; color: var(--accent-green) !important; }
+        .nav-link { color: var(--text-muted) !important; }
+        .nav-link:hover, .nav-link.active { color: var(--accent-green) !important; }
+        .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; }
+        .btn-primary, .btn-success { background: var(--accent-green); border-color: var(--accent-green); color: #000; }
+        .btn-primary:hover, .btn-success:hover { background: var(--accent-green-hover); border-color: var(--accent-green-hover); color: #fff; }
+        .form-label { color: var(--text-bright) !important; }
+        .form-control, .form-select { background: var(--bg-dark); border-color: var(--border-color); color: var(--text-primary); }
+        .form-control:focus, .form-select:focus { background: var(--bg-dark); border-color: var(--accent-green); color: var(--text-primary); }
+        .badge.bg-success { background: var(--accent-green) !important; }
+        .balance-badge { font-size: 1rem; padding: 0.35rem 0.6rem; }
+        .text-bright { color: var(--text-bright) !important; }
+        .card h4, .card h5 { color: var(--text-bright) !important; }
+        .card .text-muted { color: var(--text-muted) !important; }
+        .card .card-body h6, .card .card-body small { color: var(--text-bright) !important; }
+        .footer-lang { font-size: 0.85rem; }
+        .main-wrap { flex: 1; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="/welcome">AI-ROOM</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item"><a class="nav-link" href="/welcome"><i class="bi bi-magic"></i> {{ get_site_string('nav_create', lang) }}</a></li>
+                    {% if user %}
+                    <li class="nav-item"><a class="nav-link" href="/profile"><i class="bi bi-person"></i> {{ get_site_string('nav_profile', lang) }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/balance"><i class="bi bi-wallet2"></i> {{ get_site_string('nav_balance', lang) }}</a></li>
+                    <li class="nav-item"><span class="nav-link balance-badge badge bg-success">{{ user.balance }} ₽</span></li>
+                    {% if is_site_admin(user.email) %}<li class="nav-item"><a class="nav-link" href="/" target="_blank"><i class="bi bi-gear"></i> {{ get_site_string('nav_admin', lang) }}</a></li>{% endif %}
+                    <li class="nav-item"><a class="nav-link" href="/logout"><i class="bi bi-box-arrow-right"></i> {{ get_site_string('nav_logout', lang) }}</a></li>
+                    {% else %}
+                    <li class="nav-item"><a class="nav-link" href="/login"><i class="bi bi-box-arrow-in-right"></i> {{ get_site_string('nav_login', lang) }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/register"><i class="bi bi-person-plus"></i> {{ get_site_string('nav_register', lang) }}</a></li>
+                    {% endif %}
+                    <li class="nav-item ms-2">
+                        {% if user %}
+                        <form method="post" action="/profile/lang" class="d-inline">
+                            <input type="hidden" name="next_url" value="{{ request.url.path }}">
+                            <select name="lang" class="form-select form-select-sm" style="width:auto;min-width:100px" onchange="this.form.submit()">
+                                <option value="ru" {% if lang == 'ru' %}selected{% endif %}>RU</option>
+                                <option value="en" {% if lang == 'en' %}selected{% endif %}>EN</option>
+                                <option value="vi" {% if lang == 'vi' %}selected{% endif %}>VI</option>
+                            </select>
+                        </form>
+                        {% else %}
+                        <form method="post" action="/site/lang" class="d-inline">
+                            <input type="hidden" name="next_url" value="{{ request.url.path }}">
+                            <select name="lang" class="form-select form-select-sm" style="width:auto;min-width:100px" onchange="this.form.submit()">
+                                <option value="ru" {% if lang == 'ru' %}selected{% endif %}>RU</option>
+                                <option value="en" {% if lang == 'en' %}selected{% endif %}>EN</option>
+                                <option value="vi" {% if lang == 'vi' %}selected{% endif %}>VI</option>
+                            </select>
+                        </form>
+                        {% endif %}
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4 main-wrap">
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer class="border-top border-secondary py-3 mt-auto">
+        <div class="container">
+            <div class="d-flex flex-wrap justify-content-center gap-3 footer-lang text-muted">
+                <a href="/instructions" class="text-muted text-decoration-none">{{ get_site_string('footer_instructions', lang) }}</a>
+                <a href="/help" class="text-muted text-decoration-none">{{ get_site_string('footer_support', lang) }}</a>
+                <a href="/terms" class="text-muted text-decoration-none">{{ get_site_string('footer_terms', lang) }}</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

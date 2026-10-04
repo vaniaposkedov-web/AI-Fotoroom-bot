@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-shield-lock"></i> Управление прокси</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProxyModal">
+            <i class="bi bi-plus-lg"></i> Добавить прокси
+        </button>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3"><i class="bi bi-telegram"></i> MTProxy для Telegram</h5>
+            <p class="text-muted small mb-3">
+                MTProxy — официальный прокси от Telegram для обхода блокировок. Пользователи могут подключиться через официальное приложение Telegram.
+            </p>
+            <div id="mtproxy-status" class="mb-3">
+                <span class="badge bg-secondary">Проверка...</span>
+            </div>
+            <div class="mb-3">
+                <button class="btn btn-sm btn-primary me-2" onclick="generateMtproxyLink()">
+                    <i class="bi bi-arrow-clockwise"></i> Обновить ссылку
+                </button>
+                <button class="btn btn-sm btn-success" onclick="toggleMtproxy()" id="mtproxy-toggle-btn">
+                    <i class="bi bi-power"></i> <span id="mtproxy-toggle-text">Запустить</span>
+                </button>
+            </div>
+            <div id="mtproxy-link" class="mb-3" style="display: none;">
+                <label class="form-label">Ссылка для подключения:</label>
+                <div class="input-group">
+                    <input type="text" id="mtproxy-link-input" class="form-control" readonly>
+                    <button class="btn btn-outline-secondary" onclick="copyMtproxyLink()">
+                        <i class="bi bi-clipboard"></i> Копировать
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Как добавлять прокси</h5>
+            <p class="text-muted small">
+                Поддерживается формат: <code>http://user:pass@host:port</code> или <code>http://host:port</code>.<br>
+                Прокси используются для обхода ограничений Gemini API. Бот будет автоматически переключаться между активными прокси.
+            </p>
+        </div>
+    </div>
+
+    <script>
+    async function loadMtproxyStatus() {
+        try {
+            const r = await fetch('/api/mtproxy/status');
+            const data = await r.json();
+            const statusEl = document.getElementById('mtproxy-status');
+            const linkEl = document.getElementById('mtproxy-link');
+            const toggleBtn = document.getElementById('mtproxy-toggle-btn');
+            const toggleText = document.getElementById('mtproxy-toggle-text');
+            
+            if (data.running) {
+                statusEl.innerHTML = '<span class="badge bg-success">Запущен</span>';
+                if (data.link) {
+                    linkEl.style.display = 'block';
+                    document.getElementById('mtproxy-link-input').value = data.link;
+                } else {
+                    linkEl.style.display = 'none';
+                }
+                toggleText.textContent = 'Остановить';
+                toggleBtn.className = 'btn btn-sm btn-danger';
+            } else {
+                statusEl.innerHTML = '<span class="badge bg-secondary">Остановлен</span>';
+                linkEl.style.display = 'none';
+                toggleText.textContent = 'Запустить';
+                toggleBtn.className = 'btn btn-sm btn-success';
+            }
+        } catch (e) {
+            console.error('MTProxy status error:', e);
+        }
+    }
+    
+    async function generateMtproxyLink() {
+        try {
+            const r = await fetch('/api/mtproxy/generate', {method: 'POST'});
+            const data = await r.json();
+            if (!r.ok || data.error) {
+                alert(data.error || 'Ошибка генерации ссылки');
+                return;
+            }
+            if (data.link) {
+                document.getElementById('mtproxy-link-input').value = data.link;
+            }
+            await loadMtproxyStatus();
+        } catch (e) {
+            alert('Ошибка генерации ссылки');
+        }
+    }
+    
+    async function toggleMtproxy() {
+        try {
+            const r = await fetch('/api/mtproxy/toggle', {method: 'POST'});
+            const data = await r.json();
+            if (!r.ok || data.error) {
+                alert(data.error || 'Ошибка переключения');
+                return;
+            }
+            await loadMtproxyStatus();
+        } catch (e) {
+            alert('Ошибка переключения');
+        }
+    }
+    
+    function copyMtproxyLink() {
+        const input = document.getElementById('mtproxy-link-input');
+        input.select();
+        document.execCommand('copy');
+        alert('Ссылка скопирована!');
+    }
+    
+    loadMtproxyStatus();
+    setInterval(loadMtproxyStatus, 30000); // Обновление каждые 30 сек
+    </script>
+
+    <div class="table-responsive">
+        {% if request.query_params.get('error') == 'limit' %}
+            <div class="alert alert-warning">
+                Лимит: к одному ключу можно привязать не более 5 прокси.
+            </div>
+        {% endif %}
+        <table class="table table-hover align-middle shadow-sm bg-white rounded">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>URL</th>
+                    <th>Название</th>
+                    <th>Привязка к ключу</th>
+                    <th>Статус</th>
+                    <th>Активен</th>
+                    <th>Последняя проверка</th>
+                    <th class="text-end">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in proxies %}
+                <tr>
+                    <td>{{ p.id }}</td>
+                    <td><code class="text-break">{{ p.url }}</code></td>
+                    <td style="min-width: 240px;">
+                        <form action="/admin/proxy/set_name" method="post" class="d-flex gap-2">
+                            <input type="hidden" name="id" value="{{ p.id }}">
+                            <input type="text" name="name" class="form-control form-control-sm" value="{{ p.name or '' }}" placeholder="Напр. DE • DC">
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Сохранить</button>
+                        </form>
+                    </td>
+                    <td style="min-width: 320px;">
+                        <form action="/admin/proxy/bind_key" method="post" class="d-flex gap-2">
+                            <input type="hidden" name="proxy_id" value="{{ p.id }}">
+                            <select name="key_id" class="form-select form-select-sm">
+                                <option value="0" {% if not proxy_to_key or not proxy_to_key.get(p.id) %}selected{% endif %}>— не привязан —</option>
+                                {% for k in gemini_keys %}
+                                    <option value="{{ k.id }}" {% if proxy_to_key and (proxy_to_key.get(p.id) == k.id) %}selected{% endif %}>
+                                        {{ k.id }} • {{ "ON" if k.is_active else "OFF" }} • {{ k.token[:10] }}...
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Сохранить</button>
+                        </form>
+                    </td>
+                    <td>
+                        {% if p.status == 'working' %}
+                            <span class="badge bg-success">Работает</span>
+                        {% elif p.status == 'failed' %}
+                            <span class="badge bg-danger">Ошибка</span>
+                            <div class="text-danger x-small" style="font-size: 0.7rem; max-width: 200px;">{{ p.error_message }}</div>
+                        {% else %}
+                            <span class="badge bg-secondary">Не проверялся</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form action="/admin/proxy/toggle" method="post" class="d-inline">
+                            <input type="hidden" name="id" value="{{ p.id }}">
+                            <input type="hidden" name="active" value="{{ 0 if p.is_active else 1 }}">
+                            <button type="submit" class="btn btn-sm {{ 'btn-success' if p.is_active else 'btn-outline-secondary' }}">
+                                {{ 'ВКЛ' if p.is_active else 'ВЫКЛ' }}
+                            </button>
+                        </form>
+                    </td>
+                    <td><small>{{ p.last_check or '—' }}</small></td>
+                    <td class="text-end">
+                        <form action="/admin/proxy/check" method="post" class="d-inline">
+                            <input type="hidden" name="id" value="{{ p.id }}">
+                            <button type="submit" class="btn btn-outline-primary btn-sm" title="Проверить статус">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </button>
+                        </form>
+                        <form action="/admin/proxy/delete" method="post" class="d-inline" onsubmit="return confirm('Удалить этот прокси?')">
+                            <input type="hidden" name="id" value="{{ p.id }}">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not proxies %}
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-muted">Прокси еще не добавлены</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+<div class="modal fade" id="addProxyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form action="/admin/proxy/add" method="post" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Новый прокси</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">URL прокси</label>
+                    <textarea name="urls" class="form-control" rows="5" placeholder="http://user:pass@host:port&#10;http://host2:port2" required></textarea>
+                    <div class="form-text">Можно ввести несколько штук, по одной на строку.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="submit" class="btn btn-primary">Добавить</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

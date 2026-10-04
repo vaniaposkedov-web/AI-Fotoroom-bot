@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4><i class="bi bi-clock-history me-2"></i> История генераций (Обновлено)</h4>
+        <form class="d-flex gap-2" action="/history" method="get">
+            <input type="text" name="q" class="form-control" placeholder="PID, User ID или Категория (напр. own_variant)" value="{{ q }}">
+            <button type="submit" class="btn btn-primary">Поиск</button>
+        </form>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>PID</th>
+                    <th>User ID</th>
+                    <th>Категория</th>
+                    <th>До (Исходники)</th>
+                    <th>После (Результат)</th>
+                    <th>Промпт</th>
+                    <th>Параметры</th>
+                    <th>Дата</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in history %}
+                <tr>
+                    <td><code>{{ item.pid }}</code></td>
+                    <td><a href="/users?q={{ item.user_id }}">{{ item.user_id }}</a></td>
+                    <td>{{ item.category }}</td>
+                    <td>
+                        <div class="d-flex flex-wrap justify-content-center gap-1" style="min-width: 100px;">
+                            {% if item.input_paths and (item.input_paths | from_json) %}
+                                {% set inps = item.input_paths | from_json %}
+                                {% for p in inps %}
+                                    <div class="position-relative">
+                                        <img src="/download/{{ p }}" class="rounded shadow-sm border history-img clickable" style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;" alt="Input" onclick="showModal('/download/{{ p }}')">
+                                    </div>
+                                {% endfor %}
+                            {% elif item.input_photos and (item.input_photos | from_json) %}
+                                {% set inps_ids = item.input_photos | from_json %}
+                                {% for fid in inps_ids %}
+                                    {% if fid %}
+                                    <div class="position-relative">
+                                        <img src="/tg_img/{{ fid }}" class="rounded shadow-sm border history-img clickable" style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;" alt="Input" onclick="showModal('/tg_img/{{ fid }}')">
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted small">Нет фото</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        {% if item.result_path and item.result_path.endswith('.mp4') %}
+                            <div class="d-inline-block position-relative">
+                                <video src="/download/{{ item.result_path }}" class="rounded shadow-sm border border-info border-2" style="width: 80px; height: 80px; object-fit: cover; cursor: pointer;" muted playsinline onmouseover="this.play()" onmouseout="this.pause();this.currentTime=0;" onclick="showVideoModal('/download/{{ item.result_path }}')"></video>
+                                <span class="badge bg-info position-absolute" style="bottom:4px;left:50%;transform:translateX(-50%);font-size:0.6rem;">🎬</span>
+                            </div>
+                        {% elif item.result_path %}
+                            <img src="/download/{{ item.result_path }}" class="rounded shadow-sm border border-success border-2 history-img clickable" style="width: 80px; height: 80px; object-fit: cover; cursor: pointer;" alt="Result" onclick="showModal('/download/{{ item.result_path }}')">
+                        {% elif item.result_photo_id %}
+                            <img src="/tg_img/{{ item.result_photo_id }}" class="rounded shadow-sm border border-success border-2 history-img clickable" style="width: 80px; height: 80px; object-fit: cover; cursor: pointer;" alt="Result" onclick="showModal('/{{ item.result_photo_id }}')">
+                        {% else %}
+                            <div class="badge bg-secondary">Нет фото</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.prompt %}
+                        <button class="btn btn-sm btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#prompt-{{ item.pid }}">
+                            Промпт
+                        </button>
+                        <div class="collapse mt-2" id="prompt-{{ item.pid }}">
+                            <div class="card card-body p-2 bg-light shadow-none border" style="min-width: 200px;">
+                                <small class="text-break" style="font-size: 0.7rem;">{{ item.prompt }}</small>
+                            </div>
+                        </div>
+                        {% else %}
+                        <span class="text-muted small">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#params-{{ item.pid }}">
+                            Параметры
+                        </button>
+                        <div class="collapse mt-2" id="params-{{ item.pid }}">
+                            <div class="card card-body p-2 bg-light shadow-none border">
+                                <pre class="mb-0" style="font-size: 0.7rem; white-space: pre-wrap;">{{ item.params }}</pre>
+                            </div>
+                        </div>
+                    </td>
+                    <td><small>{{ item.created_at }}</small></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+<div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-transparent border-0 shadow-none">
+            <div class="modal-body p-0 text-center position-relative">
+                <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+                <img id="modalImage" src="" class="img-fluid rounded shadow-lg" style="max-height: 90vh;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="videoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-transparent border-0 shadow-none">
+            <div class="modal-body p-0 text-center position-relative">
+                <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close" style="z-index:10"></button>
+                <video id="modalVideo" src="" class="rounded shadow-lg" style="max-height: 90vh; max-width: 100%;" controls autoplay></video>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showModal(src) {
+    document.getElementById('modalImage').src = src;
+    var myModal = new bootstrap.Modal(document.getElementById('imageModal'));
+    myModal.show();
+}
+function showVideoModal(src) {
+    var vid = document.getElementById('modalVideo');
+    vid.src = src;
+    var myModal = new bootstrap.Modal(document.getElementById('videoModal'));
+    myModal.show();
+}
+document.getElementById('videoModal').addEventListener('hidden.bs.modal', function () {
+    document.getElementById('modalVideo').pause();
+    document.getElementById('modalVideo').src = '';
+});
+</script>
+{% endblock %}
+
+
+
+
+

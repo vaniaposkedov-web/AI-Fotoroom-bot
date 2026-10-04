@@ -1,0 +1,412 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* ── Base (mobile-first) ── */
+    .m-page { padding: 12px 8px; }
+    .m-header { font-size: 1.1rem; font-weight: 600; }
+    .m-card { border-left: 4px solid #dee2e6; border-radius: 8px; }
+    .m-card.c1 { border-color: #0d6efd; }
+    .m-card.c2 { border-color: #198754; }
+    .m-card.c3 { border-color: #fd7e14; }
+    .m-card.c4 { border-color: #6f42c1; }
+    .m-card.c5 { border-color: #0dcaf0; }
+    .m-card.c6 { border-color: #dc3545; }
+    .m-card .m-num { font-size: 1.2rem; font-weight: 700; line-height: 1; }
+    .m-card .m-lbl { font-size: 0.65rem; text-transform: uppercase; color: #6c757d; letter-spacing: 0.3px; }
+    .m-card .m-hint { font-size: 0.7rem; color: #adb5bd; margin-top: 2px; }
+    .m-sec { font-size: 0.9rem; font-weight: 600; color: #495057; }
+    .chart-box { position: relative; width: 100%; height: 200px; }
+    .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .tbl-wrap table { font-size: 0.75rem; }
+    .tbl-wrap th, .tbl-wrap td { padding: 4px 6px !important; white-space: nowrap; }
+    .tbl-wrap th:first-child, .tbl-wrap td:first-child { position: sticky; left: 0; background: #fff; z-index: 1; white-space: normal; min-width: 90px; }
+    thead.table-light th:first-child { background: #f8f9fa; }
+    .search-input { font-size: 0.8rem; height: 30px; }
+
+    /* ── Desktop ── */
+    @media (min-width: 992px) {
+        .m-page { padding: 20px; }
+        .m-header { font-size: 1.3rem; }
+        .m-card .m-num { font-size: 1.7rem; }
+        .m-card .m-lbl { font-size: 0.72rem; }
+        .m-card .m-hint { font-size: 0.78rem; }
+        .m-sec { font-size: 1rem; }
+        .chart-box { height: 280px; }
+        .tbl-wrap table { font-size: 0.82rem; }
+        .tbl-wrap th, .tbl-wrap td { padding: 6px 8px !important; }
+        .tbl-wrap th:first-child, .tbl-wrap td:first-child { min-width: 160px; }
+    }
+</style>
+
+<div class="m-page">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <span class="m-header"><i class="bi bi-graph-up me-1"></i>Метрика</span>
+        <a href="/metrics/export" class="btn btn-sm btn-outline-success py-1 px-2" style="font-size:0.78rem;">
+            <i class="bi bi-download me-1"></i>Excel
+        </a>
+    </div>
+
+    <!-- KPI cards: 3 per row on mobile, 6 on desktop -->
+    <div class="row g-2 mb-3">
+        <div class="col-4 col-lg-2">
+            <div class="card shadow-sm m-card c1 h-100">
+                <div class="card-body p-2">
+                    <div class="m-lbl">Юзеров</div>
+                    <div class="m-num text-primary">{{ totals.total_users }}</div>
+                    <div class="m-hint d-none d-lg-block">зарегистрировано</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-4 col-lg-2">
+            <div class="card shadow-sm m-card c2 h-100">
+                <div class="card-body p-2">
+                    <div class="m-lbl">Платящих</div>
+                    <div class="m-num text-success">{{ totals.total_paying }}</div>
+                    <div class="m-hint d-none d-lg-block">≥1 оплата</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-4 col-lg-2">
+            <div class="card shadow-sm m-card c3 h-100">
+                <div class="card-body p-2">
+                    <div class="m-lbl">Конверсия</div>
+                    <div class="m-num" style="color:#fd7e14;">{% if totals.total_users > 0 %}{{ "{:.1f}".format(totals.total_paying / totals.total_users * 100) }}%{% else %}0%{% endif %}</div>
+                    <div class="m-hint d-none d-lg-block">плат./все</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-4 col-lg-2">
+            <div class="card shadow-sm m-card c4 h-100">
+                <div class="card-body p-2">
+                    <div class="m-lbl">Выручка</div>
+                    <div class="m-num">{{ "{:,.0f}".format(totals.total_revenue) }}<small style="font-size:0.6em">₽</small></div>
+                    <div class="m-hint d-none d-lg-block">за всё время</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-4 col-lg-2">
+            <div class="card shadow-sm m-card c5 h-100">
+                <div class="card-body p-2">
+                    <div class="m-lbl">Генераций</div>
+                    <div class="m-num text-info">{{ "{:,.0f}".format(totals.total_generations) }}</div>
+                    <div class="m-hint d-none d-lg-block">фото</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-4 col-lg-2">
+            <div class="card shadow-sm m-card c6 h-100">
+                <div class="card-body p-2">
+                    <div class="m-lbl">Ср. чек</div>
+                    <div class="m-num">{% if totals.total_paying > 0 %}{{ "{:.0f}".format(totals.total_revenue / totals.total_paying) }}{% else %}0{% endif %}<small style="font-size:0.6em">₽</small></div>
+                    <div class="m-hint d-none d-lg-block">на клиента</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Extra KPI row -->
+    <div class="row g-2 mb-3">
+        <div class="col-4 col-lg-3">
+            <div class="card shadow-sm m-card" style="border-color:#e83e8c">
+                <div class="card-body p-2">
+                    <div class="m-lbl" style="color:#e83e8c">Видео</div>
+                    <div class="m-num" style="color:#e83e8c">{{ "{:,.0f}".format(totals.total_video_generations) }}</div>
+                    <div class="m-hint">всего видео</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-4 col-lg-3">
+            <div class="card shadow-sm m-card" style="border-color:#20c997">
+                <div class="card-body p-2">
+                    <div class="m-lbl" style="color:#20c997">Платили в месяце</div>
+                    <div class="m-num" style="color:#20c997">{{ totals.paying_this_month }}</div>
+                    <div class="m-hint">уник. юзеров</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-4 col-lg-3">
+            <div class="card shadow-sm m-card" style="border-color:#e83e8c">
+                <div class="card-body p-2">
+                    <div class="m-lbl" style="color:#e83e8c">Под угрозой оттока</div>
+                    <div class="m-num" style="color:#e83e8c">{{ at_risk_users | length }}</div>
+                    <div class="m-hint">1 оплата, 14+ дней назад</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- At-risk users -->
+    {% if at_risk_users %}
+    <div class="card shadow-sm mb-3" style="border-top:3px solid #e83e8c">
+        <div class="card-header py-2 px-3 bg-white d-flex justify-content-between align-items-center">
+            <span class="m-sec" style="color:#e83e8c"><i class="bi bi-exclamation-triangle me-1"></i>Под угрозой оттока — оплатили 1 раз, 14+ дней назад ({{ at_risk_users | length }})</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="tbl-wrap" style="max-height:300px;overflow-y:auto">
+                <table class="table table-hover table-sm mb-0">
+                    <thead class="table-light sticky-top">
+                        <tr>
+                            <th>ID</th>
+                            <th>Клиент</th>
+                            <th>Источник</th>
+                            <th>Сумма ₽</th>
+                            <th>Дата оплаты</th>
+                            <th>Дней назад</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in at_risk_users %}
+                        <tr>
+                            <td><a href="/users?q={{ u.user_id }}">{{ u.user_id }}</a></td>
+                            <td>{{ u.username or u.first_name or "—" }}</td>
+                            <td><span class="badge bg-secondary" style="font-size:0.65rem">{{ u.source or "—" }}</span></td>
+                            <td class="fw-bold text-success">{{ "{:,.0f}".format(u.total_in) }}</td>
+                            <td>{{ u.last_pay[:10] if u.last_pay else "—" }}</td>
+                            <td class="text-danger fw-bold">{{ u.days_ago }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Chart -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-header py-2 px-3 bg-white">
+            <span class="m-sec"><i class="bi bi-bar-chart me-1"></i>Финансы</span>
+        </div>
+        <div class="card-body p-2">
+            <div class="chart-box">
+                <canvas id="metricsChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly table -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-header py-2 px-3 bg-white">
+            <span class="m-sec"><i class="bi bi-calendar3 me-1"></i>По месяцам</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="tbl-wrap">
+                <table class="table table-bordered table-sm mb-0 text-center">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="text-start">Показатель</th>
+                            {% for m in months %}
+                            <th>{{ m.label }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="text-start">Новых платящих</td>
+                            {% for m in months %}
+                            <td class="{% if monthly[m.key].new_paying > 0 %}text-success fw-bold{% endif %}">{{ monthly[m.key].new_paying }}</td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td class="text-start">Ушло (churn)</td>
+                            {% for m in months %}
+                            <td class="{% if monthly[m.key].churned > 0 %}text-danger{% endif %}">{{ monthly[m.key].churned }}</td>
+                            {% endfor %}
+                        </tr>
+                        <tr class="table-light">
+                            <td class="text-start fw-bold">Активных</td>
+                            {% for m in months %}
+                            <td class="fw-bold">{{ monthly[m.key].active_paying }}</td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td class="text-start">Выручка ₽</td>
+                            {% for m in months %}
+                            <td class="text-success">{{ "{:,.0f}".format(monthly[m.key].revenue) }}</td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td class="text-start">API ₽</td>
+                            {% for m in months %}
+                            <td class="text-danger">{{ "{:,.0f}".format(monthly[m.key].api_cost) }}</td>
+                            {% endfor %}
+                        </tr>
+                        <tr class="table-light">
+                            <td class="text-start fw-bold">Прибыль ₽</td>
+                            {% for m in months %}
+                            {% set profit = monthly[m.key].revenue - monthly[m.key].api_cost %}
+                            <td class="fw-bold {% if profit >= 0 %}text-success{% else %}text-danger{% endif %}">{{ "{:,.0f}".format(profit) }}</td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td class="text-start">Генераций (фото)</td>
+                            {% for m in months %}
+                            <td>{{ monthly[m.key].generations }}</td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td class="text-start" style="color:#e83e8c">Генераций (видео)</td>
+                            {% for m in months %}
+                            <td style="color:#e83e8c">{{ monthly[m.key].video_generations }}</td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td class="text-start">Ср. чек ₽</td>
+                            {% for m in months %}
+                            <td>{{ "{:.0f}".format(monthly[m.key].avg_recharge) if monthly[m.key].avg_recharge else "—" }}</td>
+                            {% endfor %}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top clients -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-header py-2 px-3 bg-white">
+            <span class="m-sec"><i class="bi bi-trophy me-1"></i>Топ-10</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="tbl-wrap">
+                <table class="table table-hover table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>ID</th>
+                            <th>Клиент</th>
+                            <th>Сумма ₽</th>
+                            <th>Оплат</th>
+                            <th>Ср.чек ₽</th>
+                            <th>Генер.</th>
+                            <th>Посл.оплата</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in top_users %}
+                        <tr>
+                            <td class="fw-bold">{{ loop.index }}</td>
+                            <td><a href="/users?q={{ u.user_id }}">{{ u.user_id }}</a></td>
+                            <td>{{ u.username or u.first_name or "—" }}</td>
+                            <td class="fw-bold text-success">{{ "{:,.0f}".format(u.total_recharged) }}</td>
+                            <td>{{ u.recharge_count }}</td>
+                            <td>{{ "{:.0f}".format(u.avg_recharge) if u.avg_recharge else "—" }}</td>
+                            <td>{{ u.generation_count }}</td>
+                            <td>{{ u.last_activity[:10] if u.last_activity else "—" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- All users -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-header py-2 px-3 bg-white d-flex justify-content-between align-items-center">
+            <span class="m-sec"><i class="bi bi-people me-1"></i>Пользователи</span>
+            <input type="text" id="userSearch" class="form-control search-input" style="max-width:180px" placeholder="Поиск...">
+        </div>
+        <div class="card-body p-0">
+            <div class="tbl-wrap" style="max-height:450px; overflow-y:auto;">
+                <table class="table table-hover table-sm mb-0" id="usersTable">
+                    <thead class="table-light sticky-top">
+                        <tr>
+                            <th>ID</th>
+                            <th>Клиент</th>
+                            <th>Рег.</th>
+                            <th>Источник</th>
+                            <th>Баланс</th>
+                            <th>Пополн.</th>
+                            <th>Оплат</th>
+                            <th>Ср.чек</th>
+                            <th>Генер.</th>
+                            <th>Расход</th>
+                            <th>Актив.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in user_metrics %}
+                        <tr>
+                            <td><a href="/users?q={{ u.user_id }}">{{ u.user_id }}</a></td>
+                            <td>{{ u.username or u.first_name or "—" }}</td>
+                            <td>{{ u.created_at[:10] if u.created_at else "—" }}</td>
+                            <td><span class="badge bg-secondary" style="font-size:0.65rem">{{ u.source or "—" }}</span></td>
+                            <td>{{ u.balance }}</td>
+                            <td class="{% if u.total_recharged > 0 %}fw-bold text-success{% endif %}">{{ "{:,.0f}".format(u.total_recharged) }}</td>
+                            <td>{{ u.recharge_count }}</td>
+                            <td>{{ "{:.0f}".format(u.avg_recharge) if u.avg_recharge else "—" }}</td>
+                            <td>{{ u.generation_count }}</td>
+                            <td class="{% if u.total_spent > 0 %}text-danger{% endif %}">{{ "{:,.0f}".format(u.total_spent) }}</td>
+                            <td>{{ u.last_activity[:10] if u.last_activity else "—" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+var ctx = document.getElementById('metricsChart').getContext('2d');
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: {{ chart_labels | tojson }},
+        datasets: [
+            {
+                label: 'Выручка',
+                data: {{ chart_revenue | tojson }},
+                backgroundColor: 'rgba(25,135,84,0.7)',
+                borderColor: 'rgba(25,135,84,1)',
+                borderWidth: 1,
+                borderRadius: 2
+            },
+            {
+                label: 'Расход API',
+                data: {{ chart_api_cost | tojson }},
+                backgroundColor: 'rgba(220,53,69,0.6)',
+                borderColor: 'rgba(220,53,69,1)',
+                borderWidth: 1,
+                borderRadius: 2
+            },
+            {
+                label: 'Прибыль',
+                type: 'line',
+                data: {{ chart_profit | tojson }},
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13,110,253,0.08)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 3,
+                pointBackgroundColor: '#0d6efd'
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 10, padding: 8, font: { size: 11 } } },
+            tooltip: { callbacks: { label: function(c) { return c.dataset.label + ': ' + c.parsed.y.toLocaleString('ru-RU') + ' ₽'; } } }
+        },
+        scales: {
+            x: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 0 } },
+            y: { beginAtZero: true, ticks: { font: { size: 10 }, callback: function(v) { return v >= 1000 ? (v/1000)+'к' : v; } } }
+        }
+    }
+});
+
+document.getElementById('userSearch').addEventListener('input', function() {
+    var q = this.value.toLowerCase();
+    document.querySelectorAll('#usersTable tbody tr').forEach(function(row) {
+        row.style.display = row.textContent.toLowerCase().indexOf(q) >= 0 ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

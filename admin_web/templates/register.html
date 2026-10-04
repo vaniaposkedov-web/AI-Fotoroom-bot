@@ -1,0 +1,29 @@
+{% set lang = user.language if user else (request.session.get('preferred_lang') or 'ru') %}
+{% extends "base_site.html" %}
+{% block title %}{{ get_site_string('page_register', lang) }} — AI-ROOM{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card p-4">
+            <h4 class="mb-4"><i class="bi bi-person-plus"></i> {{ get_site_string('page_register', lang) }}</h4>
+            {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+            <form method="post" action="/register">
+                <div class="mb-3">
+                    <label class="form-label">{{ get_site_string('login_email', lang) }}</label>
+                    <input type="email" name="email" class="form-control" required autofocus>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ get_site_string('login_password', lang) }}</label>
+                    <input type="password" name="password" class="form-control" required minlength="6">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ get_site_string('register_repeat_password', lang) }}</label>
+                    <input type="password" name="password2" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">{{ get_site_string('register_submit', lang) }}</button>
+            </form>
+            <p class="mt-3 text-muted">{{ get_site_string('register_has_account', lang) }} <a href="/login" class="text-success">{{ get_site_string('nav_login', lang) }}</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card p-4">
+    <h4><i class="bi bi-gear me-2"></i> Системные настройки</h4>
+    
+    <form action="/settings/update" method="post" class="mt-3">
+        <div class="mb-4">
+            <label class="form-label fw-bold">📜 Пользовательское соглашение</label>
+            <textarea name="agreement" class="form-control" rows="10">{{ agreement }}</textarea>
+            <div class="form-text">Отображается новым пользователям перед использованием бота.</div>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label fw-bold">📢 ID Telegram канала (для обязательной подписки)</label>
+            <div class="input-group">
+                <input type="text" name="channel_id" class="form-control" value="{{ channel_id }}" placeholder="-100123456789">
+                <button type="button" class="btn btn-outline-secondary" onclick="testChannel()">Проверить</button>
+            </div>
+            <div class="form-text">Оставьте пустым, чтобы отключить проверку. Бот должен быть администратором в канале.</div>
+            <div id="channelTestResult" class="mt-2 small"></div>
+        </div>
+
+        <script>
+        async function testChannel() {
+            const resDiv = document.getElementById('channelTestResult');
+            resDiv.innerHTML = '<span class="text-muted">Проверка...</span>';
+            try {
+                const resp = await fetch('/settings/test_channel', {method: 'POST'});
+                const data = await resp.json();
+                if (data.status === 'success') {
+                    resDiv.innerHTML = '<span class="text-success">✅ ' + data.message + '</span>';
+                } else {
+                    resDiv.innerHTML = '<span class="text-danger">❌ ' + data.message + '</span>';
+                }
+            } catch (e) {
+                resDiv.innerHTML = '<span class="text-danger">❌ Ошибка запроса: ' + e + '</span>';
+            }
+        }
+        </script>
+
+        <div class="mb-4">
+            <label class="form-label fw-bold">🔗 Ссылка на Telegram канал</label>
+            <input type="text" name="channel_url" class="form-control" value="{{ channel_url }}" placeholder="https://t.me/bnbslow">
+            <div class="form-text">Ссылка на канал, которая будет дана пользователю для подписки.</div>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label fw-bold">👥 ID VK сообщества (для обязательной подписки в VK-боте)</label>
+            <input type="text" name="vk_group_id" class="form-control" value="{{ vk_group_id }}" placeholder="123456789">
+            <div class="form-text">Оставьте пустым, чтобы отключить проверку подписки в VK.</div>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label fw-bold">🔗 Ссылка на VK сообщество</label>
+            <input type="text" name="vk_group_url" class="form-control" value="{{ vk_group_url }}" placeholder="https://vk.com/public123456789">
+            <div class="form-text">Ссылка, которую VK-бот отправит неподписанному пользователю.</div>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label fw-bold">📖 Инструкция (Как пользоваться)</label>
+            <textarea name="howto" class="form-control" rows="10">{{ howto }}</textarea>
+            <div class="form-text">Отображается при нажатии кнопки "Инструкция" в боте и на сайте.</div>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label fw-bold">💬 Контакт для поддержки и пополнения</label>
+            <input type="text" name="support_contact" class="form-control" value="{{ support_contact }}" placeholder="https://t.me/bnbslow или @username или email@example.com">
+            <div class="form-text">Ссылка на Telegram, email — для техподдержки и пополнения баланса на сайте.</div>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label fw-bold">💬 Контакт для VK (пополнение)</label>
+            <input type="text" name="support_contact_vk" class="form-control" value="{{ support_contact_vk }}" placeholder="https://vk.com/id123456 или https://vk.com/username">
+            <div class="form-text">Используется в VK-боте в сообщении пополнения. Если пусто — берется общий контакт поддержки.</div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+    </form>
+</div>
+{% endblock %}
+
+

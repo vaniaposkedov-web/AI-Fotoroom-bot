@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<h4 class="mb-4">Включение/Выключение категорий</h4>
+<div class="row g-3">
+    {% for c in categories %}
+    <div class="col-12 col-md-4">
+        <div class="card p-3 d-flex flex-row justify-content-between align-items-center">
+            <span class="fw-bold">{{ c.name.upper() }}</span>
+            <form action="/categories/toggle/{{ c.name }}" method="post">
+                <button type="submit" class="btn btn-sm {% if c.enabled %}btn-success{% else %}btn-danger{% endif %} btn-round">
+                    {% if c.enabled %}Вкл{% else %}Выкл{% endif %}
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+
+
+
+
+
+

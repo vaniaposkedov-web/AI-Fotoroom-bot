@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Мониторинг Vertex AI{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-server text-primary me-2"></i> Мониторинг Vertex AI (Live)
+        </h2>
+        <span class="badge bg-success" id="live-indicator"><i class="fas fa-circle ms-1 pb-1" style="font-size: 0.6rem; animation: pulse 1s infinite;"></i> ОНЛАЙН</span>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="accounts-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Проект (ID)</th>
+                            <th>Статус <i class="fas fa-bolt text-warning"></i></th>
+                            <th>Нагрузка (RPM)</th>
+                            <th>Генерации</th>
+                            <th>Бюджет (Trial $300)</th>
+                            <th>Последняя Ошибка</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for acc in accounts %}
+                        <tr id="row-{{ acc.project_id }}">
+                            <td>
+                                <div class="fw-bold">{{ acc.project_id }}</div>
+                                <small class="text-muted"><i class="fas fa-envelope"></i> {{ acc.client_email }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary status-badge" id="status-{{ acc.project_id }}">Ожидание данных...</span>
+                                <div class="small text-danger mt-1 fw-bold time-left" id="time-{{ acc.project_id }}" style="display: none;"></div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2 fw-bold" id="rpm-text-{{ acc.project_id }}">0 / 8</span>
+                                    <div class="progress flex-grow-1" style="max-width: 150px; height: 10px;">
+                                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-info" id="rpm-bar-{{ acc.project_id }}" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="fw-bold fs-5" id="gens-{{ acc.project_id }}">{{ acc.gen_count }}</span>
+                            </td>
+                            <td>
+                                <div class="d-flex justify-content-between mb-1 small">
+                                    <span class="text-danger fw-bold" id="spent-{{ acc.project_id }}">Потрачено: $0</span>
+                                    <span class="text-success fw-bold" id="left-{{ acc.project_id }}">Остаток: $0</span>
+                                </div>
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar bg-danger" id="budget-bar-{{ acc.project_id }}" role="progressbar" style="width: 0%;"></div>
+                                </div>
+                            </td>
+                            <td>
+                                <small class="text-danger text-wrap" style="max-width: 250px; display: inline-block; word-break: break-word;" id="error-{{ acc.project_id }}"></small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 1; }
+}
+</style>
+
+<script>
+function updateAccountsData() {
+    fetch('/api/accounts/live')
+        .then(response => response.json())
+        .then(data => {
+            for (const [projectId, stats] of Object.entries(data)) {
+                // Если аккаунта еще нет в таблице (добавили новый файл) - просто ждем рефреша страницы
+                if (!document.getElementById(`row-${projectId}`)) continue;
+
+                // 1. Обновляем статус и ТИКАЮЩИЙ таймер
+                const statusBadge = document.getElementById(`status-${projectId}`);
+                const timeLeft = document.getElementById(`time-${projectId}`);
+
+                statusBadge.textContent = stats.status;
+                if (stats.is_active) {
+                    statusBadge.className = "badge bg-success";
+                    timeLeft.style.display = "none";
+                } else {
+                    if (stats.status.includes("Отключен")) {
+                        statusBadge.className = "badge bg-danger";
+                    } else {
+                        statusBadge.className = "badge bg-warning text-dark";
+                    }
+
+                    if (stats.time_left > 0) {
+                        timeLeft.textContent = `⏳ Осталось: ${stats.time_left} сек.`;
+                        timeLeft.style.display = "block";
+                    } else {
+                        timeLeft.style.display = "none";
+                    }
+                }
+
+                // 2. Обновляем ползунок RPM (Нагрузка)
+                const rpmPercent = Math.min(100, (stats.rpm_current / stats.rpm_max) * 100);
+                document.getElementById(`rpm-text-${projectId}`).textContent = `${stats.rpm_current} / ${stats.rpm_max}`;
+                const rpmBar = document.getElementById(`rpm-bar-${projectId}`);
+                rpmBar.style.width = `${rpmPercent}%`;
+                rpmBar.className = `progress-bar progress-bar-striped progress-bar-animated ${rpmPercent >= 100 ? 'bg-danger' : (rpmPercent > 50 ? 'bg-warning' : 'bg-info')}`;
+
+                // 3. Обновляем бюджет и генерации
+                document.getElementById(`gens-${projectId}`).textContent = stats.gen_count;
+                document.getElementById(`spent-${projectId}`).textContent = `Потрачено: $${stats.spent_dollars}`;
+                document.getElementById(`left-${projectId}`).textContent = `Остаток: $${stats.left_dollars}`;
+                document.getElementById(`budget-bar-${projectId}`).style.width = `${stats.load_percent}%`;
+
+                // 4. Текст последней ошибки
+                document.getElementById(`error-${projectId}`).textContent = stats.last_error;
+            }
+        })
+        .catch(err => console.error("Ошибка обновления LIVE данных:", err));
+}
+
+// Запускаем опрос каждую секунду, чтобы счетчики тикали плавно
+setInterval(updateAccountsData, 1000);
+updateAccountsData(); // Первый запуск сразу
+</script>
+{% endblock %}

@@ -1,0 +1,1092 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid px-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/constructor">Конструктор</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Настройка {{ category['name_ru'] }}</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 onclick="toggleCategoryEdit()" style="cursor: pointer;" title="Нажмите, чтобы изменить название">
+            <i class="bi bi-pencil-square me-2"></i> 
+            <span id="cat-name-display">{{ category['name_ru'] }}</span>
+            <small class="text-muted fs-6 ms-2">({{ category['key'] }})</small>
+        </h2>
+        <div id="cat-edit-form" class="d-none">
+            <form action="/constructor/category/update/{{ category['id'] }}" method="post" class="row g-2 align-items-center">
+                <div class="col-auto">
+                    <input type="text" name="name" class="form-control form-control-sm" value="{{ category['name_ru'] }}" required>
+                </div>
+                <div class="col-auto">
+                    <input type="text" name="key" class="form-control form-control-sm" value="{{ category['key'] }}" required>
+                </div>
+                <div class="col-auto">
+                    <input type="number" name="order" class="form-control form-control-sm" value="{{ category['order_index'] }}" style="width: 60px;">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary btn-sm">OK</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="toggleCategoryEdit()">Отмена</button>
+                </div>
+            </form>
+        </div>
+        <div class="d-flex gap-2">
+            <button id="saveAllBtn" class="btn btn-primary btn-round" onclick="saveAllChanges()" disabled>
+                <i class="bi bi-cloud-check me-1"></i> Сохранить всё
+            </button>
+            <a href="/constructor/category/{{ category['id'] }}/languages" class="btn btn-outline-primary btn-round">
+                <i class="bi bi-translate me-1"></i> Языки
+            </a>
+            <a href="/constructor" class="btn btn-outline-secondary btn-round">
+                <i class="bi bi-arrow-left me-1"></i> Назад
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        
+        <div class="col-lg-2">
+            <div class="card shadow-sm border-0 h-100">
+        <div class="card-header bg-white py-3">
+                    <h6 class="mb-0"><i class="bi bi-braces me-2"></i> Аббревиатуры</h6>
+                </div>
+                <div class="card-body overflow-auto" style="max-height: calc(100vh - 220px); height: calc(100vh - 220px);">
+                    <p class="text-muted small mb-3">
+                        Используйте эти шаблоны в промптах, чтобы подставлять ответы пользователя.
+                    </p>
+                    {% if prompt_placeholders %}
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr class="text-muted small">
+                                    <th>ID</th>
+                                    <th>Название</th>
+                                    <th>Шаблон</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in prompt_placeholders %}
+                                <tr>
+                                    <td><span class="text-muted small">#{{ item.id }}</span></td>
+                                    <td class="small">{{ item.label }}</td>
+                                    <td><code>{{ item.token }}</code></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-muted small">Пока нет доступных аббревиатур.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="col-lg-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-grid-3x3-gap me-2"></i> Библиотека кнопок</h5>
+                    <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#newButtonCategoryModal">
+                        <i class="bi bi-folder-plus me-1"></i> Категория
+                    </button>
+                </div>
+                <div class="card-body overflow-auto" style="max-height: 80vh;">
+                    {% for cat_name, buttons in lib_buttons.items() %}
+                    <div class="mb-4">
+                        <h6 class="text-uppercase text-muted small fw-bold mb-3 border-bottom pb-1">{{ cat_name }}</h6>
+                        <div class="d-flex flex-wrap gap-2 library-buttons" id="lib-btns-{{ loop.index }}">
+                            {% for btn in buttons %}
+                            <div class="btn btn-sm btn-outline-secondary library-item position-relative" 
+                                 data-text="{{ btn['option_text'] }}" 
+                                 data-text-en="{{ btn['option_text_en'] or '' }}"
+                                 data-text-vi="{{ btn['option_text_vi'] or '' }}"
+                                 data-value="{{ btn['option_value'] }}"
+                                 data-prompt="{{ btn['custom_prompt'] or '' }}">
+                                {{ btn['option_text'] }}
+                                {% if btn['option_value'] == 'skip' %}<span class="badge bg-warning text-dark x-small">SKIP</span>{% endif %}
+                                {% if btn['option_value'] == 'back' %}<span class="badge bg-info x-small">BACK</span>{% endif %}
+                                {% if btn['option_value'] == 'custom' %}<span class="badge bg-primary x-small">CUSTOM</span>{% endif %}
+                                <form action="/constructor/library/button/delete/{{ btn['id'] }}" method="post" class="position-absolute top-0 end-0">
+                                    <button type="submit" class="btn btn-link p-0 text-danger" title="Удалить" onclick="return confirm('Удалить эту кнопку из библиотеки?')">
+                                        <i class="bi bi-x-circle-fill"></i>
+                                    </button>
+                                </form>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    <div class="mt-4 pt-3 border-top">
+                        <button class="btn btn-sm btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#newCustomBtnModal">
+                            <i class="bi bi-plus-lg me-1"></i> Своя кнопка
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0 min-vh-100">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-list-task me-2"></i> Очередь вопросов</h5>
+                    <span class="badge bg-light text-dark border">{{ steps|length }} шагов</span>
+                </div>
+                <div class="card-body bg-light" id="canvas">
+                    {% for step in steps %}
+    <div class="card mb-3 border-0 shadow-sm step-item" 
+         data-id="{{ step.id }}" 
+         data-key="{{ step.key }}"
+         data-question-en="{{ step.question_en or '' }}"
+         data-question-vi="{{ step.question_vi or '' }}">
+        <div class="card-header bg-white d-flex align-items-center py-2 border-0">
+            <div class="drag-handle-step me-2" style="cursor: move; color: #dee2e6;">
+                <i class="bi bi-grip-vertical h5 mb-0"></i>
+            </div>
+            <div class="flex-grow-1">
+                <input type="text" class="form-control form-control-sm border-0 fw-bold p-0 step-question-input" value="{{ step.question }}" onchange="markDirty()">
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-link btn-sm text-muted" data-bs-toggle="dropdown">
+                    <i class="bi bi-three-dots-vertical"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="#" onclick="editStepTranslations(this)"><i class="bi bi-translate me-2"></i> Переводы</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="#" onclick="deleteStep({{ step.id }}, this)"><i class="bi bi-trash me-2"></i> Удалить</a></li>
+                </ul>
+            </div>
+        </div>
+                        <div class="card-body pt-0">
+                            <div class="row g-2 mb-3">
+                                <div class="col-auto">
+                                    <select class="form-select form-select-sm step-type-select" onchange="updateStepType(this)">
+                                        <option value="buttons" {% if step.type == 'buttons' %}selected{% endif %}>Кнопки</option>
+                                        <option value="text" {% if step.type == 'text' %}selected{% endif %}>Текст</option>
+                                        <option value="photo" {% if step.type == 'photo' %}selected{% endif %}>Фото</option>
+                                        <option value="model_select" {% if step.type == 'model_select' %}selected{% endif %}>Выбор модели</option>
+                    </select>
+                </div>
+                                <div class="col-auto">
+                                    <div class="form-check form-check-inline mt-1">
+                                        <input class="form-check-input step-optional-check" type="checkbox" id="opt-{{ step.id }}" {% if step.optional %}checked{% endif %} onchange="markDirty()">
+                                        <label class="form-check-label small" for="opt-{{ step.id }}">Можно пропустить</label>
+                </div>
+                </div>
+                                <div class="col text-end">
+                                    <small class="text-muted">Ключ: <code>{{ step.key }}</code></small>
+        </div>
+    </div>
+
+                            <div class="step-buttons-container {% if step.type != 'buttons' %}d-none{% endif %}">
+                                <div class="d-flex flex-wrap gap-2 canvas-buttons-list p-2 border rounded-3 bg-white min-vh-5" style="min-height: 45px;">
+                                    {% for opt in step.options %}
+                                    <div class="btn btn-xs btn-light border d-flex align-items-center gap-2 canvas-button-item" 
+                                         data-id="{{ opt.id }}" 
+                                         data-text="{{ opt.text }}" 
+                                         data-text-en="{{ opt.text_en or '' }}"
+                                         data-text-vi="{{ opt.text_vi or '' }}"
+                                         data-value="{{ opt.value }}"
+                                         data-prompt="{{ opt.prompt or '' }}">
+                                        <span>
+                                            {{ opt.text }}
+                                            {% if opt.value == 'skip' %}<span class="badge bg-warning text-dark x-small">SKIP</span>{% endif %}
+                                            {% if opt.value == 'back' %}<span class="badge bg-info x-small">BACK</span>{% endif %}
+                                            {% if opt.value == 'custom' %}<span class="badge bg-primary x-small">CUSTOM</span>{% endif %}
+                                        </span>
+                                        <div class="btn-group">
+                                            {% if opt.prompt %}
+                                            <i class="bi bi-chat-dots text-primary small" title="Свой вариант: {{ opt.prompt }}"></i>
+                                            {% endif %}
+                                            <button type="button" class="btn btn-link btn-xs p-0 text-muted ms-1" onclick="editButton(this)"><i class="bi bi-gear"></i></button>
+                                            <button type="button" class="btn btn-link btn-xs p-0 text-danger ms-1" onclick="this.parentElement.parentElement.remove(); markDirty();"><i class="bi bi-x"></i></button>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="text-center mt-1">
+                                    <small class="text-muted" style="font-size: 0.7rem;">Перетащите кнопки сюда</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    
+                    <div id="empty-canvas" class="text-center py-5 border-2 border-dashed rounded-3 {% if steps %}d-none{% endif %}">
+                        <i class="bi bi-plus-circle h1 text-muted"></i>
+                        <p class="text-muted mt-2">Перетащите вопросы из правой колонки сюда</p>
+                </div>
+                        </div>
+                        </div>
+                    </div>
+
+        
+        <div class="col-lg-2">
+            <div class="card shadow-sm border-0 d-flex flex-column" style="height: calc(100vh - 180px);">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0"><i class="bi bi-question-circle me-2"></i> Готовые вопросы</h5>
+                </div>
+                <div class="card-body overflow-auto flex-grow-1">
+                    <div id="library-questions" class="list-group list-group-flush">
+                        {% for step in lib_steps %}
+                        <div class="list-group-item list-group-item-action border rounded mb-2 library-question-item d-flex justify-content-between align-items-center" 
+                             data-key="{{ step.step_key }}" 
+                             data-question="{{ step.question_text }}" 
+                             data-question-en="{{ step.question_text_en }}"
+                             data-question-vi="{{ step.question_text_vi }}"
+                             data-type="{{ step.input_type }}"
+                             data-id="{{ step.id }}"
+                             data-buttons='{{ step.default_buttons | e }}'
+                             style="cursor: grab;">
+                            <div>
+                                <div class="fw-bold small">{{ step.question_text }}</div>
+                                <code class="x-small">{{ step.step_key }}</code>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-light text-muted small">{{ step.input_type }}</span>
+                                <button type="button" class="btn btn-link btn-sm p-0 text-muted lib-edit-btn" title="Редактировать">
+                                    <i class="bi bi-gear"></i>
+                </button>
+                            </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                    <div class="mt-4 pt-3 border-top">
+                        <button class="btn btn-sm btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#newCustomStepModal">
+                            <i class="bi bi-plus-lg me-1"></i> Свой вопрос
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="newButtonCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="/constructor/library/category/add" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Создать категорию кнопок</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Название категории</label>
+                        <input type="text" name="name" class="form-control" placeholder="Например: Характер" required>
+                            </div>
+                            </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Создать</button>
+                            </div>
+                        </form>
+                    </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="editLibraryStepModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Редактировать вопрос в библиотеке</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="lib-step-id">
+                <div class="row g-2 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Ключ</label>
+                        <input type="text" id="lib-step-key" class="form-control">
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">Вопрос</label>
+                        <input type="text" id="lib-step-question" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Тип</label>
+                        <select id="lib-step-type" class="form-select">
+                            <option value="buttons">Кнопки</option>
+                            <option value="text">Текст</option>
+                            <option value="photo">Фото</option>
+                            <option value="model_select">Выбор модели</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Кнопки (для типа "Кнопки")</label>
+                    <div id="lib-step-buttons" class="d-flex flex-wrap gap-2 p-2 border rounded-3 bg-light" style="min-height: 60px;"></div>
+                    <small class="text-muted">Перетащите кнопки из списка ниже.</small>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Библиотека кнопок</label>
+                    <div id="lib-step-buttons-library" class="d-flex flex-wrap gap-2 p-2 border rounded-3" style="min-height: 60px;"></div>
+                </div>
+            </div>
+            <div class="modal-footer d-flex justify-content-between">
+                <form id="lib-step-delete-form" method="post">
+                    <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Удалить этот вопрос из библиотеки?')">
+                        Удалить
+                            </button>
+                        </form>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" id="lib-step-save-btn" onclick="saveLibraryStep()">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="stepTranslationsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Переводы вопроса</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-step-id">
+                <div class="mb-3">
+                    <label class="form-label">Вопрос (EN)</label>
+                    <input type="text" id="edit-step-question-en" class="form-control" placeholder="English question">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Вопрос (VI)</label>
+                    <input type="text" id="edit-step-question-vi" class="form-control" placeholder="Vietnamese question">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="applyStepTranslations()">Применить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="buttonSettingsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Настройка кнопки</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-btn-index">
+                <div class="mb-3">
+                    <label class="form-label">Текст на кнопке (RU)</label>
+                    <input type="text" id="edit-btn-text" class="form-control">
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Текст (EN)</label>
+                        <input type="text" id="edit-btn-text-en" class="form-control" placeholder="English">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Текст (VI)</label>
+                        <input type="text" id="edit-btn-text-vi" class="form-control" placeholder="Tiếng Việt">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Значение (Value/ID)</label>
+                    <input type="text" id="edit-btn-value" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Текст вопроса для "Своего варианта"</label>
+                    <textarea id="edit-btn-prompt" class="form-control" rows="2" placeholder="Оставьте пустым, если это обычная кнопка"></textarea>
+                    <div class="form-text">Если заполнено, при нажатии на кнопку бот попросит пользователя ввести текст.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="applyButtonSettings()">Применить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+<div class="modal fade" id="newCustomBtnModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="/constructor/library/button/add" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Создать новую кнопку в библиотеку</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Текст кнопки (RU)</label>
+                        <input type="text" name="text" class="form-control" required>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Текст (EN)</label>
+                            <input type="text" name="text_en" class="form-control" placeholder="English">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Текст (VI)</label>
+                            <input type="text" name="text_vi" class="form-control" placeholder="Tiếng Việt">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Значение (ID)</label>
+                        <input type="text" name="value" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Категория в библиотеке</label>
+                        <select name="category" class="form-select">
+                            {% for cat_name in lib_buttons.keys() %}
+                            <option value="{{ cat_name }}">{{ cat_name }}</option>
+        {% endfor %}
+                            <option value="Разное">Новая категория (Разное)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Создать в библиотеке</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    </div>
+
+
+<div class="modal fade" id="newCustomStepModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="/constructor/library/step/add" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Создать свой вопрос в библиотеку</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Ключ вопроса (ID для базы)</label>
+                        <input type="text" name="step_key" class="form-control" placeholder="например: age" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Текст вопроса в боте</label>
+                        <input type="text" name="question" class="form-control" placeholder="Введите ваш возраст:" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Тип ответа</label>
+                        <select name="input_type" class="form-select">
+                            <option value="buttons">Кнопки</option>
+                            <option value="text">Текст</option>
+                            <option value="photo">Фото</option>
+                            <option value="model_select">Выбор модели</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Создать в библиотеке</button>
+                </div>
+            </form>
+    </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+    let isDirty = false;
+    let currentEditingBtn = null;
+    let currentEditingStep = null;
+
+    function toggleCategoryEdit() {
+        const display = document.getElementById('cat-name-display').parentElement;
+        const form = document.getElementById('cat-edit-form');
+        display.classList.toggle('d-none');
+        form.classList.toggle('d-none');
+    }
+
+    const SYSTEM_BUTTONS = [
+        { text: 'Назад', value: 'back', prompt: '' },
+        { text: 'Пропустить', value: 'skip', prompt: '' },
+        { text: 'Свой вариант', value: 'custom', prompt: 'Введите ваш вариант текста:' }
+    ];
+
+    function ensureSystemButtons(container) {
+        if (!container) return;
+        const existing = new Set(
+            Array.from(container.querySelectorAll('.canvas-button-item')).map(el => el.getAttribute('data-value'))
+        );
+        let added = false;
+        SYSTEM_BUTTONS.forEach(btn => {
+            if (!existing.has(btn.value)) {
+                container.insertAdjacentHTML('beforeend', createButtonHtml(btn.text, btn.value, btn.prompt));
+                added = true;
+            }
+        });
+        if (added) markDirty();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Инициализация перетаскивания вопросов из библиотеки
+        new Sortable(document.getElementById('library-questions'), {
+            group: {
+                name: 'steps',
+                pull: 'clone',
+                put: false
+            },
+            sort: false,
+            animation: 150
+        });
+
+        // Инициализация холста для вопросов
+        const canvas = new Sortable(document.getElementById('canvas'), {
+            group: 'steps',
+            handle: '.drag-handle-step',
+            animation: 150,
+            onAdd: function(evt) {
+                const item = evt.item;
+                const key = item.getAttribute('data-key');
+                const question = item.getAttribute('data-question');
+                const questionEn = item.getAttribute('data-question-en') || '';
+                const questionVi = item.getAttribute('data-question-vi') || '';
+                const type = item.getAttribute('data-type');
+                const buttonsJson = item.getAttribute('data-buttons');
+                
+                // Создаем новый HTML для шага на холсте
+                const stepHtml = createStepHtml(key, question, type, questionEn, questionVi);
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = stepHtml;
+                const stepEl = wrapper.firstElementChild;
+                item.replaceWith(stepEl);
+
+                const btnContainer = stepEl.querySelector('.canvas-buttons-list');
+                initButtonSortable(btnContainer);
+                if (type === 'buttons') {
+                    let defaultButtons = [];
+                    if (buttonsJson) {
+                        try { defaultButtons = JSON.parse(buttonsJson); } catch (e) { defaultButtons = []; }
+                    }
+                    if (defaultButtons.length) {
+                        defaultButtons.forEach(btn => {
+                            btnContainer.insertAdjacentHTML(
+                                'beforeend',
+                                createButtonHtml(btn.text, btn.value, btn.prompt || '', btn.text_en || '', btn.text_vi || '')
+                            );
+                        });
+                    } else {
+                        ensureSystemButtons(btnContainer);
+                    }
+                }
+                markDirty();
+                checkEmptyCanvas();
+            },
+            onUpdate: function() {
+                markDirty();
+            }
+        });
+
+        // Инициализация библиотек кнопок
+        document.querySelectorAll('.library-buttons').forEach(el => {
+            new Sortable(el, {
+                group: {
+                    name: 'buttons',
+                    pull: 'clone',
+                    put: false
+                },
+                sort: false,
+                animation: 150
+            });
+        });
+
+        // Инициализация существующих списков кнопок на холсте
+        document.querySelectorAll('.canvas-buttons-list').forEach(el => {
+            initButtonSortable(el);
+        });
+
+        document.querySelectorAll('.lib-edit-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const item = this.closest('.library-question-item');
+                openLibraryStepModal(item);
+            });
+        });
+    });
+
+    function initButtonSortable(el) {
+        new Sortable(el, {
+            group: 'buttons',
+            animation: 150,
+            onAdd: function(evt) {
+                const item = evt.item;
+                const text = item.getAttribute('data-text');
+                const textEn = item.getAttribute('data-text-en') || '';
+                const textVi = item.getAttribute('data-text-vi') || '';
+                const value = item.getAttribute('data-value');
+                const prompt = item.getAttribute('data-prompt');
+                
+                const btnHtml = createButtonHtml(text, value, prompt, textEn, textVi);
+                item.outerHTML = btnHtml;
+                markDirty();
+            },
+            onUpdate: function() {
+                markDirty();
+            }
+        });
+    }
+
+    function createStepHtml(key, question, type, question_en = '', question_vi = '') {
+        const id = 'new-' + Date.now();
+        return `
+            <div class="card mb-3 border-0 shadow-sm step-item" 
+                 data-id="null" 
+                 data-key="${key}"
+                 data-question-en="${question_en}"
+                 data-question-vi="${question_vi}">
+                <div class="card-header bg-white d-flex align-items-center py-2 border-0">
+                    <div class="drag-handle-step me-2" style="cursor: move; color: #dee2e6;">
+                        <i class="bi bi-grip-vertical h5 mb-0"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <input type="text" class="form-control form-control-sm border-0 fw-bold p-0 step-question-input" value="${question}" onchange="markDirty()">
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-link btn-sm text-muted" data-bs-toggle="dropdown">
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#" onclick="editStepTranslations(this)"><i class="bi bi-translate me-2"></i> Переводы</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#" onclick="deleteStep(null, this)"><i class="bi bi-trash me-2"></i> Удалить</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body pt-0">
+                    <div class="row g-2 mb-3">
+                        <div class="col-auto">
+                            <select class="form-select form-select-sm step-type-select" onchange="updateStepType(this)">
+                                <option value="buttons" ${type === 'buttons' ? 'selected' : ''}>Кнопки</option>
+                                <option value="text" ${type === 'text' ? 'selected' : ''}>Текст</option>
+                                <option value="photo" ${type === 'photo' ? 'selected' : ''}>Фото</option>
+                                <option value="model_select" ${type === 'model_select' ? 'selected' : ''}>Выбор модели</option>
+                            </select>
+                        </div>
+                        <div class="col-auto">
+                            <div class="form-check form-check-inline mt-1">
+                                <input class="form-check-input step-optional-check" type="checkbox" id="opt-${id}" onchange="markDirty()">
+                                <label class="form-check-label small" for="opt-${id}">Можно пропустить</label>
+                            </div>
+                        </div>
+                        <div class="col text-end">
+                            <small class="text-muted">Ключ: <code>${key}</code></small>
+                        </div>
+                    </div>
+                    <div class="step-buttons-container ${type !== 'buttons' ? 'd-none' : ''}">
+                        <div class="d-flex flex-wrap gap-2 canvas-buttons-list p-2 border rounded-3 bg-white min-vh-5" style="min-height: 45px;"></div>
+                        <div class="text-center mt-1">
+                            <small class="text-muted" style="font-size: 0.7rem;">Перетащите кнопки сюда</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function createButtonHtml(text, value, prompt = '', text_en = '', text_vi = '') {
+        let badge = '';
+        if (value === 'skip') badge = '<span class="badge bg-warning text-dark x-small">SKIP</span>';
+        else if (value === 'back') badge = '<span class="badge bg-info x-small">BACK</span>';
+        else if (value === 'custom') badge = '<span class="badge bg-primary x-small">CUSTOM</span>';
+
+        return `
+            <div class="btn btn-xs btn-light border d-flex align-items-center gap-2 canvas-button-item" 
+                 data-id="null" 
+                 data-text="${text}" 
+                 data-text-en="${text_en}"
+                 data-text-vi="${text_vi}"
+                 data-value="${value}"
+                 data-prompt="${prompt}">
+                <span>${text} ${badge}</span>
+                <div class="btn-group">
+                    ${prompt ? '<i class="bi bi-chat-dots text-primary small" title="Свой вариант"></i>' : ''}
+                    <button type="button" class="btn btn-link btn-xs p-0 text-muted ms-1" onclick="editButton(this)"><i class="bi bi-gear"></i></button>
+                    <button type="button" class="btn btn-link btn-xs p-0 text-danger ms-1" onclick="this.parentElement.parentElement.remove(); markDirty();"><i class="bi bi-x"></i></button>
+                </div>
+            </div>
+        `;
+    }
+
+    function createLibraryButtonHtml(text, value, prompt = '', text_en = '', text_vi = '') {
+        let badge = '';
+        if (value === 'skip') badge = '<span class="badge bg-warning text-dark x-small">SKIP</span>';
+        else if (value === 'back') badge = '<span class="badge bg-info x-small">BACK</span>';
+        else if (value === 'custom') badge = '<span class="badge bg-primary x-small">CUSTOM</span>';
+
+        return `
+            <div class="btn btn-xs btn-light border d-flex align-items-center gap-2 canvas-button-item"
+                 data-id="null"
+                 data-text="${text}"
+                 data-text-en="${text_en}"
+                 data-text-vi="${text_vi}"
+                 data-value="${value}"
+                 data-prompt="${prompt}">
+                <span>${text} ${badge}</span>
+                <div class="btn-group">
+                    ${prompt ? '<i class="bi bi-chat-dots text-primary small" title="Свой вариант"></i>' : ''}
+                    <button type="button" class="btn btn-link btn-xs p-0 text-muted ms-1" onclick="editButton(this)"><i class="bi bi-gear"></i></button>
+                    <button type="button" class="btn btn-link btn-xs p-0 text-danger ms-1" onclick="this.parentElement.parentElement.remove();"><i class="bi bi-x"></i></button>
+                </div>
+            </div>
+        `;
+    }
+
+    function initLibraryButtonsSortable(el) {
+        new Sortable(el, {
+            group: 'buttons',
+            animation: 150,
+            onAdd: function(evt) {
+                const item = evt.item;
+                const text = item.getAttribute('data-text');
+                const textEn = item.getAttribute('data-text-en') || '';
+                const textVi = item.getAttribute('data-text-vi') || '';
+                const value = item.getAttribute('data-value');
+                const prompt = item.getAttribute('data-prompt');
+                const btnHtml = createLibraryButtonHtml(text, value, prompt, textEn, textVi);
+                item.outerHTML = btnHtml;
+            }
+        });
+    }
+
+    function initLibraryButtonsLibrarySortable(el) {
+        new Sortable(el, {
+            group: {
+                name: 'buttons',
+                pull: 'clone',
+                put: false
+            },
+            sort: false,
+            animation: 150
+        });
+    }
+
+    function openLibraryStepModal(item) {
+        const stepId = item.getAttribute('data-id');
+        const key = item.getAttribute('data-key');
+        const question = item.getAttribute('data-question');
+        const type = item.getAttribute('data-type');
+        const buttonsJson = item.getAttribute('data-buttons') || '[]';
+
+        document.getElementById('lib-step-id').value = stepId;
+        document.getElementById('lib-step-key').value = key;
+        document.getElementById('lib-step-question').value = question;
+        document.getElementById('lib-step-type').value = type;
+
+        const btnContainer = document.getElementById('lib-step-buttons');
+        btnContainer.innerHTML = '';
+        try {
+            const buttons = JSON.parse(buttonsJson);
+            buttons.forEach(btn => {
+                btnContainer.insertAdjacentHTML('beforeend', createLibraryButtonHtml(btn.text, btn.value, btn.prompt || '', btn.text_en || '', btn.text_vi || ''));
+            });
+        } catch (e) {}
+
+        initLibraryButtonsSortable(btnContainer);
+
+        const libContainer = document.getElementById('lib-step-buttons-library');
+        libContainer.innerHTML = '';
+        document.querySelectorAll('.library-item').forEach(btn => {
+            const text = btn.getAttribute('data-text');
+            const textEn = btn.getAttribute('data-text-en') || '';
+            const textVi = btn.getAttribute('data-text-vi') || '';
+            const value = btn.getAttribute('data-value');
+            const prompt = btn.getAttribute('data-prompt') || '';
+            const div = document.createElement('div');
+            div.className = 'btn btn-sm btn-outline-secondary library-item';
+            div.setAttribute('data-text', text);
+            div.setAttribute('data-text-en', textEn);
+            div.setAttribute('data-text-vi', textVi);
+            div.setAttribute('data-value', value);
+            div.setAttribute('data-prompt', prompt);
+            div.textContent = text;
+            libContainer.appendChild(div);
+        });
+        initLibraryButtonsLibrarySortable(libContainer);
+
+        document.getElementById('lib-step-delete-form').action = `/constructor/library/step/delete/${stepId}`;
+        new bootstrap.Modal(document.getElementById('editLibraryStepModal')).show();
+    }
+
+    async function saveLibraryStep() {
+        const stepId = document.getElementById('lib-step-id').value;
+        const key = document.getElementById('lib-step-key').value;
+        const question = document.getElementById('lib-step-question').value;
+        const type = document.getElementById('lib-step-type').value;
+
+        const buttonsList = [];
+        document.querySelectorAll('#lib-step-buttons .canvas-button-item').forEach((btn, index) => {
+            buttonsList.push({
+                id: btn.getAttribute('data-id'),
+                text: btn.getAttribute('data-text'),
+                text_en: btn.getAttribute('data-text-en') || '',
+                text_vi: btn.getAttribute('data-text-vi') || '',
+                value: btn.getAttribute('data-value'),
+                prompt: btn.getAttribute('data-prompt'),
+                order: index + 1
+            });
+        });
+
+        const response = await fetch(`/constructor/library/step/update/${stepId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                step: { key, question, type },
+                options: buttonsList
+            })
+        });
+
+        if (response.ok) {
+            showToast('Вопрос обновлён', 'success');
+            setTimeout(() => location.reload(), 500);
+        } else {
+            showToast('Ошибка сохранения', 'danger');
+        }
+    }
+
+    function markDirty() {
+        isDirty = true;
+        document.getElementById('saveAllBtn').disabled = false;
+    }
+
+    function updateStepType(select) {
+        const container = select.closest('.card-body').querySelector('.step-buttons-container');
+        if (select.value === 'buttons') {
+            container.classList.remove('d-none');
+        } else {
+            container.classList.add('d-none');
+        }
+        markDirty();
+    }
+
+    function checkEmptyCanvas() {
+        const canvas = document.getElementById('canvas');
+        const empty = document.getElementById('empty-canvas');
+        if (canvas.querySelectorAll('.step-item').length > 0) {
+            empty.classList.add('d-none');
+        } else {
+            empty.classList.remove('d-none');
+        }
+    }
+
+    function deleteStep(id, el) {
+        if (confirm('Удалить этот шаг?')) {
+            el.closest('.step-item').remove();
+            markDirty();
+            checkEmptyCanvas();
+        }
+    }
+
+    function editStepTranslations(el) {
+        const item = el.closest('.step-item');
+        currentEditingStep = item;
+        document.getElementById('edit-step-question-en').value = item.getAttribute('data-question-en') || '';
+        document.getElementById('edit-step-question-vi').value = item.getAttribute('data-question-vi') || '';
+        
+        new bootstrap.Modal(document.getElementById('stepTranslationsModal')).show();
+    }
+
+    function applyStepTranslations() {
+        if (!currentEditingStep) return;
+        
+        const qEn = document.getElementById('edit-step-question-en').value;
+        const qVi = document.getElementById('edit-step-question-vi').value;
+        
+        currentEditingStep.setAttribute('data-question-en', qEn);
+        currentEditingStep.setAttribute('data-question-vi', qVi);
+        
+        markDirty();
+        bootstrap.Modal.getInstance(document.getElementById('stepTranslationsModal')).hide();
+    }
+
+    function editButton(btn) {
+        const item = btn.closest('.canvas-button-item');
+        currentEditingBtn = item;
+        document.getElementById('edit-btn-text').value = item.getAttribute('data-text') || '';
+        document.getElementById('edit-btn-text-en').value = item.getAttribute('data-text-en') || '';
+        document.getElementById('edit-btn-text-vi').value = item.getAttribute('data-text-vi') || '';
+        document.getElementById('edit-btn-value').value = item.getAttribute('data-value') || '';
+        document.getElementById('edit-btn-prompt').value = item.getAttribute('data-prompt') || '';
+        
+        new bootstrap.Modal(document.getElementById('buttonSettingsModal')).show();
+    }
+
+    function applyButtonSettings() {
+        if (!currentEditingBtn) return;
+        
+        const text = document.getElementById('edit-btn-text').value;
+        const textEn = document.getElementById('edit-btn-text-en').value;
+        const textVi = document.getElementById('edit-btn-text-vi').value;
+        const value = document.getElementById('edit-btn-value').value;
+        const prompt = document.getElementById('edit-btn-prompt').value;
+        
+        currentEditingBtn.setAttribute('data-text', text);
+        currentEditingBtn.setAttribute('data-text-en', textEn);
+        currentEditingBtn.setAttribute('data-text-vi', textVi);
+        currentEditingBtn.setAttribute('data-value', value);
+        currentEditingBtn.setAttribute('data-prompt', prompt);
+        currentEditingBtn.querySelector('span').textContent = text;
+        
+        // Обновляем иконку prompt
+        const group = currentEditingBtn.querySelector('.btn-group');
+        let oldIcon = group.querySelector('.bi-chat-dots');
+        if (prompt) {
+            if (!oldIcon) {
+                oldIcon = document.createElement('i');
+                oldIcon.className = 'bi bi-chat-dots text-primary small';
+                group.insertBefore(oldIcon, group.firstChild);
+            }
+            oldIcon.title = 'Свой вариант: ' + prompt;
+        } else if (oldIcon) {
+            oldIcon.remove();
+        }
+        
+        markDirty();
+        bootstrap.Modal.getInstance(document.getElementById('buttonSettingsModal')).hide();
+    }
+
+    function createCustomButton() {
+        const text = document.getElementById('new-btn-text').value;
+        const value = document.getElementById('new-btn-value').value;
+        if (!text || !value) return;
+
+        // Добавляем в первую попавшуюся библиотеку для простоты
+        const lib = document.querySelector('.library-buttons');
+        if (lib) {
+            const div = document.createElement('div');
+            div.className = 'btn btn-sm btn-outline-secondary library-item';
+            div.setAttribute('data-text', text);
+            div.setAttribute('data-value', value);
+            div.setAttribute('data-prompt', '');
+            div.textContent = text;
+            lib.appendChild(div);
+            showToast('Кнопка создана в библиотеке', 'info');
+        }
+        
+        bootstrap.Modal.getInstance(document.getElementById('newCustomBtnModal')).hide();
+        document.getElementById('new-btn-text').value = '';
+        document.getElementById('new-btn-value').value = '';
+    }
+
+    function createCustomStep() {
+        const key = document.getElementById('new-step-key').value;
+        const question = document.getElementById('new-step-question').value;
+        const type = document.getElementById('new-step-type').value;
+        
+        if (!key || !question) return;
+
+        const stepHtml = createStepHtml(key, question, type);
+        const canvas = document.getElementById('canvas');
+        const empty = document.getElementById('empty-canvas');
+        
+        const temp = document.createElement('div');
+        temp.innerHTML = stepHtml;
+        const newStep = temp.firstElementChild;
+        canvas.appendChild(newStep);
+        
+        initButtonSortable(newStep.querySelector('.canvas-buttons-list'));
+        
+        empty.classList.add('d-none');
+        markDirty();
+        
+        bootstrap.Modal.getInstance(document.getElementById('newCustomStepModal')).hide();
+        document.getElementById('new-step-key').value = '';
+        document.getElementById('new-step-question').value = '';
+    }
+
+    async function saveAllChanges() {
+        const stepsData = [];
+        const stepItems = document.querySelectorAll('.step-item');
+        
+        stepItems.forEach((item, index) => {
+            const stepId = item.getAttribute('data-id');
+            const buttonsList = [];
+            item.querySelectorAll('.canvas-button-item').forEach((btn, bIndex) => {
+                buttonsList.push({
+                    id: btn.getAttribute('data-id'),
+                    text: btn.getAttribute('data-text'),
+                    text_en: btn.getAttribute('data-text-en') || '',
+                    text_vi: btn.getAttribute('data-text-vi') || '',
+                    value: btn.getAttribute('data-value'),
+                    prompt: btn.getAttribute('data-prompt'),
+                    order: bIndex + 1
+                });
+            });
+
+            stepsData.push({
+                id: stepId === 'null' ? null : parseInt(stepId),
+                key: item.getAttribute('data-key'),
+                question: item.querySelector('.step-question-input').value,
+                question_en: item.getAttribute('data-question-en') || '',
+                question_vi: item.getAttribute('data-question-vi') || '',
+                type: item.querySelector('.step-type-select').value,
+                optional: item.querySelector('.step-optional-check').checked ? 1 : 0,
+                order: index + 1,
+                buttons: buttonsList
+            });
+        });
+
+        try {
+            const response = await fetch('/constructor/category/{{ category["id"] }}/save_all', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ steps: stepsData })
+            });
+            
+            if (response.ok) {
+                isDirty = false;
+                document.getElementById('saveAllBtn').disabled = true;
+                showToast('Все изменения успешно сохранены!', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast('Ошибка при сохранении!', 'danger');
+            }
+        } catch (error) {
+            console.error(error);
+            showToast('Критическая ошибка сохранения!', 'danger');
+        }
+    }
+
+    function showToast(message, type = 'success') {
+                const toast = document.createElement('div');
+                toast.className = 'position-fixed bottom-0 end-0 p-3';
+        toast.style.zIndex = '1060';
+                toast.innerHTML = `
+            <div class="toast show align-items-center text-white bg-${type} border-0" role="alert">
+                        <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+    }
+</script>
+
+<style>
+    .btn-xs { padding: 0.15rem 0.4rem; font-size: 0.75rem; border-radius: 4px; }
+    .x-small { font-size: 0.65rem; }
+    .min-vh-5 { min-height: 5vh; }
+    .btn-round { border-radius: 30px; }
+    .sortable-ghost { opacity: 0.3; background: #e9ecef !important; border: 2px dashed #6c757d !important; }
+    .step-item { transition: box-shadow 0.2s; }
+    .step-item:hover { box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important; }
+    .library-item { cursor: grab; user-select: none; }
+    .library-item:active { cursor: grabbing; }
+</style>
+{% endblock %}

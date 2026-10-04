@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    
+    <div class="col-md-4">
+        <div class="card h-100" style="max-height: 80vh; overflow-y: auto;">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-chat-left-dots"></i> Поддержка</h5>
+            </div>
+            <div class="list-group list-group-flush">
+                {% if not support_users %}
+                <div class="p-4 text-center text-muted">Чатов пока нет</div>
+                {% endif %}
+                {% for u_id, u_name, f_name, source, unread, last_at in support_users %}
+                <a href="/support?user_id={{ u_id }}" class="list-group-item list-group-item-action {% if current_user and current_user[0] == u_id %}active{% endif %}">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">{{ f_name or u_name or u_id }} <span class="badge bg-secondary">{{ source|upper }}</span></h6>
+                        <small class="text-muted">{{ last_at }}</small>
+                    </div>
+                    <p class="mb-1 text-truncate">ID: {{ u_id }}</p>
+                    {% if unread > 0 %}
+                    <span class="badge bg-danger rounded-pill">{{ unread }}</span>
+                    {% endif %}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="col-md-8">
+        {% if current_user %}
+        <div class="card h-100" style="max-height: 80vh; display: flex; flex-direction: column;">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-person"></i> 
+                    {{ current_user[2] or current_user[1] or current_user[0] }} 
+                    <small class="text-muted">(ID: {{ current_user[0] }}, {{ current_user[3]|upper }})</small>
+                </h5>
+                <a href="/users/{{ current_user[0] }}" class="btn btn-outline-primary btn-sm">Профиль</a>
+            </div>
+            
+            <div class="card-body p-4" id="chat-box" style="flex-grow: 1; overflow-y: auto; background-color: #f0f2f5;">
+                {% for text, is_admin, created_at, file_id, file_type in messages %}
+                <div class="d-flex mb-3 {% if is_admin %}justify-content-end{% else %}justify-content-start{% endif %}">
+                    <div class="p-3 rounded-3 shadow-sm" style="max-width: 75%; {% if is_admin %}background-color: #007bff; color: white;{% else %}background-color: white;{% endif %}">
+                        {% if file_id %}
+                            {% if file_type == 'photo' %}
+                                <img src="/support/file/{{ file_id }}" class="img-fluid rounded mb-2" style="max-height: 300px; cursor: pointer;" onclick="window.open(this.src)">
+                            {% elif file_type == 'video' %}
+                                <video src="/support/file/{{ file_id }}" controls class="img-fluid rounded mb-2" style="max-height: 300px;"></video>
+                            {% endif %}
+                        {% endif %}
+                        {% if text %}
+                            <div style="white-space: pre-wrap;">{{ text }}</div>
+                        {% endif %}
+                        <div class="text-end mt-1" style="font-size: 0.7rem; opacity: 0.8;">{{ created_at }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="card-footer bg-white border-top-0 p-3">
+                <form action="/support/send" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="user_id" value="{{ current_user[0] }}">
+                    <div class="mb-2">
+                        <textarea name="message_text" class="form-control" rows="2" placeholder="Введите ответ..."></textarea>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="input-group input-group-sm w-auto">
+                            <input type="file" name="file" class="form-control" id="supportFile" accept="image/*,video/*">
+                        </div>
+                        <button class="btn btn-primary" type="submit">
+                            <i class="bi bi-send"></i> Отправить
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <div class="card h-100 d-flex align-items-center justify-content-center p-5 text-center text-muted">
+            <div>
+                <i class="bi bi-chat-dots" style="font-size: 4rem;"></i>
+                <p class="mt-3">Выберите чат слева, чтобы начать переписку</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Прокрутка чата вниз при загрузке
+    const chatBox = document.getElementById('chat-box');
+    if (chatBox) {
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+</script>
+{% endblock %}

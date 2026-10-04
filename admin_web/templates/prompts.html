@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4><i class="bi bi-file-earmark-code me-2"></i> Управление Промптами и Категориями</h4>
+    </div>
+
+    <div class="card p-3 mb-4 bg-light border-dashed">
+        <h6 class="mb-3">🧩 Промпты категорий (используются в боте)</h6>
+        <div class="small text-muted mb-3">Нажмите "Обновить промпт" под нужным разделом — он сразу записывается в app_settings и применяется при следующей генерации.</div>
+
+        <form action="/prompts/category_prompt/update" method="post" class="row g-2 mb-3">
+            <input type="hidden" name="key" value="whitebg_prompt">
+            <div class="col-12"><label class="form-label">Белый фон</label></div>
+            <div class="col-12"><textarea name="value" class="form-control" rows="3" placeholder="Промпт для белого фона">{{ cat_prompts.whitebg_prompt }}</textarea></div>
+            <div class="col-12"><button type="submit" class="btn btn-outline-primary btn-sm">Обновить промпт</button></div>
+        </form>
+
+        <form action="/prompts/category_prompt/update" method="post" class="row g-2 mb-3">
+            <input type="hidden" name="key" value="collage_prompt">
+            <div class="col-12"><label class="form-label">Коллаж (4 кадра)</label></div>
+            <div class="col-12"><textarea name="value" class="form-control" rows="3" placeholder="Промпт для коллажа (модель + товар спереди + товар сзади → 4 кадра)">{{ cat_prompts.collage_prompt }}</textarea></div>
+            <div class="col-12"><button type="submit" class="btn btn-outline-primary btn-sm">Обновить промпт</button></div>
+        </form>
+
+        <form action="/prompts/category_prompt/update" method="post" class="row g-2 mb-3">
+            <input type="hidden" name="key" value="random_prompt">
+            <div class="col-12"><label class="form-label">Рандом</label></div>
+            <div class="col-12"><textarea name="value" class="form-control" rows="3" placeholder="Промпт для рандома">{{ cat_prompts.random_prompt }}</textarea></div>
+            <div class="col-12"><button type="submit" class="btn btn-outline-primary btn-sm">Обновить промпт</button></div>
+        </form>
+
+        <form action="/prompts/category_prompt/update" method="post" class="row g-2 mb-3">
+            <input type="hidden" name="key" value="random_other_prompt">
+            <div class="col-12"><label class="form-label">Рандом прочее</label></div>
+            <div class="col-12"><textarea name="value" class="form-control" rows="3">{{ cat_prompts.random_other_prompt }}</textarea></div>
+            <div class="col-12"><button type="submit" class="btn btn-outline-primary btn-sm">Обновить промпт</button></div>
+        </form>
+
+        <form action="/prompts/category_prompt/update" method="post" class="row g-2 mb-3">
+            <input type="hidden" name="key" value="storefront_prompt">
+            <div class="col-12"><label class="form-label">Витринное фото</label></div>
+            <div class="col-12"><textarea name="value" class="form-control" rows="3">{{ cat_prompts.storefront_prompt }}</textarea></div>
+            <div class="col-12"><button type="submit" class="btn btn-outline-primary btn-sm">Обновить промпт</button></div>
+        </form>
+
+        <form action="/prompts/category_prompt/update" method="post" class="row g-2 mb-3">
+            <input type="hidden" name="key" value="infographic_clothing_prompt">
+            <div class="col-12"><label class="form-label">Инфографика (одежда)</label></div>
+            <div class="col-12"><textarea name="value" class="form-control" rows="3">{{ cat_prompts.infographic_clothing_prompt }}</textarea></div>
+            <div class="col-12"><button type="submit" class="btn btn-outline-primary btn-sm">Обновить промпт</button></div>
+        </form>
+
+        <form action="/prompts/category_prompt/update" method="post" class="row g-2 mb-3">
+            <input type="hidden" name="key" value="infographic_other_prompt">
+            <div class="col-12"><label class="form-label">Инфографика (прочее)</label></div>
+            <div class="col-12"><textarea name="value" class="form-control" rows="3">{{ cat_prompts.infographic_other_prompt }}</textarea></div>
+            <div class="col-12"><button type="submit" class="btn btn-outline-primary btn-sm">Обновить промпт</button></div>
+        </form>
+
+        <form action="/prompts/category_prompt/update" method="post" class="row g-2 mb-3">
+            <input type="hidden" name="key" value="own_prompt">
+            <div class="col-12"><label class="form-label">Свой вариант (одежда)</label></div>
+            <div class="col-12"><textarea name="value" class="form-control" rows="3">{{ cat_prompts.own_prompt }}</textarea></div>
+            <div class="col-12"><button type="submit" class="btn btn-outline-primary btn-sm">Обновить промпт</button></div>
+        </form>
+
+        <form action="/prompts/category_prompt/update" method="post" class="row g-2 mb-3">
+            <input type="hidden" name="key" value="own_variant_prompt">
+            <div class="col-12"><label class="form-label">Свой вариант (фон)</label></div>
+            <div class="col-12"><textarea name="value" class="form-control" rows="3">{{ cat_prompts.own_variant_prompt }}</textarea></div>
+            <div class="col-12"><button type="submit" class="btn btn-outline-primary btn-sm">Обновить промпт</button></div>
+        </form>
+
+        <form action="/prompts/category_prompt/update" method="post" class="row g-2 mb-3">
+            <input type="hidden" name="key" value="presets_prompt">
+            <div class="col-12"><label class="form-label">Готовые пресеты (общий промпт)</label></div>
+            <div class="col-12"><textarea name="value" class="form-control" rows="3" placeholder="Этот промпт будет добавляться ко всем генерациям в разделе готовых пресетов">{{ cat_prompts.presets_prompt }}</textarea></div>
+            <div class="col-12"><button type="submit" class="btn btn-outline-primary btn-sm">Обновить промпт</button></div>
+        </form>
+
+        <form action="/prompts/category_prompt/update" method="post" class="row g-2 mb-3">
+            <input type="hidden" name="key" value="photostudio_wb_prompt">
+            <div class="col-12"><label class="form-label">📸 Фотостудия WB/OZON</label></div>
+            <div class="col-12"><textarea name="value" class="form-control" rows="3" placeholder="Базовый промпт профессиональной съёмки под карточку маркетплейса. К нему добавляются выбранные пользователем длина изделия, длина рукава, тип кроя и его свободное описание сцены.">{{ cat_prompts.photostudio_wb_prompt }}</textarea></div>
+            <div class="col-12"><button type="submit" class="btn btn-outline-primary btn-sm">Обновить промпт</button></div>
+        </form>
+
+        <hr class="my-4">
+        <h6 class="mb-3">🎬 Видеогенерация — 1 фото (photo 1)</h6>
+        <div class="small text-muted mb-3">
+            <b>Как работает:</b> Фото пользователя передаётся как <code>photo 1</code> (first_frame).<br>
+            Промпт берётся целиком из админки — пользователь НЕ вводит текст, только выбирает режим, формат и длительность.<br>
+            <b>Пример:</b> <code>Animate photo 1 with smooth cinematic camera movement. Professional commercial video, studio lighting.</code>
+        </div>
+
+        <form action="/prompts/category_prompt/update" method="post" class="row g-2 mb-3">
+            <input type="hidden" name="key" value="video_clothing_prompt">
+            <div class="col-12"><label class="form-label">👗 Анимация одежды</label></div>
+            <div class="col-12"><textarea name="value" class="form-control" rows="3" placeholder="Animate the clothing item in photo 1 showing fabric texture and natural movement. Smooth rotation, professional studio lighting, clean background.">{{ cat_prompts.video_clothing_prompt }}</textarea></div>
+            <div class="col-12"><button type="submit" class="btn btn-outline-primary btn-sm">Обновить промпт</button></div>
+        </form>
+
+        <div class="small text-muted mt-2">
+            Массовое сохранение оставлено только на API-уровне для совместимости. Для точного применения используйте кнопки "Обновить промпт" в каждом разделе.
+        </div>
+    </div>
+
+    <div class="alert alert-info">
+        <small>
+            Используйте переменные в фигурных скобках для автоматической подстановки данных:
+        </small>
+        {% if prompt_placeholders %}
+        <div class="mt-2 table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                    <tr class="text-muted small">
+                        <th>ID</th>
+                        <th>Название</th>
+                        <th>Шаблон</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in prompt_placeholders %}
+                    <tr>
+                        <td><span class="text-muted small">#{{ item.id }}</span></td>
+                        <td class="small">{{ item.label }}</td>
+                        <td><code>{{ item.token }}</code></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+        <hr class="my-2">
+        <small>
+            <b>Дополнительно:</b> <code>{Пол}</code>, <code>{Пол модели}</code>, <code>{Возраст модели}</code>, <code>{Рост модели}</code>, <code>{Размер модели}</code>, <code>{Поза модели}</code>, <code>{Присутствие человека на фото}</code>
+            <br>
+            <b>Одежда:</b> <code>{Длина изделия}</code>, <code>{Тип рукава}</code>, <code>{Тип кроя}</code>, <code>{Тип кроя штанов}</code>
+            <br>
+            <b>Окружение:</b> <code>{Тип локации}</code>, <code>{Стиль локации}</code>, <code>{Сезон}</code>, <code>{Праздник}</code>
+            <br>
+            <b>Камера:</b> <code>{Угол камеры}</code> (Спереди/Сзади), <code>{ракурс фотографии}</code> (Дальний/Средний/Близкий)
+            <br>
+            <b>Инфографика:</b> <code>{Название товара}</code>, <code>{Название бренда}</code>, <code>{Нагруженность инфографики}</code>, <code>{Язык инфографики}</code>, <code>{Стиль}</code>
+            <br>
+            <b>Преимущества:</b> <code>{Преимущество 1}</code>, <code>{Преимущество 2}</code>, <code>{Преимущество 3}</code>, <code>{Доп информация}</code>
+            <br>
+            <b>Размеры:</b> <code>{Ширина}</code>, <code>{Высота}</code>, <code>{Длина}</code>, <code>{Тип шрифта}</code>
+        </small>
+    </div>
+
+    <ul class="nav nav-tabs mb-3" id="catTabs" role="tablist">
+        {% set cat_names = {
+            'female': 'Женская',
+            'male': 'Мужская',
+            'boy': 'Мальчик',
+            'girl': 'Девочка',
+            'storefront': 'Витрина'
+        } %}
+        {% for cat in ['female', 'male', 'boy', 'girl', 'storefront'] %}
+        <li class="nav-item">
+            <button class="nav-link {% if loop.first %}active{% endif %}" id="{{ cat }}-tab" data-bs-toggle="tab" data-bs-target="#{{ cat }}-pane" type="button">
+                {{ cat_names.get(cat, cat | capitalize) }}
+            </button>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <div class="tab-content">
+        {% for cat in ['female', 'male', 'boy', 'girl', 'storefront'] %}
+        <div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="{{ cat }}-pane">
+            
+            <div class="card p-3 mb-4 bg-light border-dashed">
+                <h6 class="mb-3">➕ Добавить модель/фон в категорию {{ cat_names.get(cat, cat | capitalize) }}</h6>
+                <form action="/models/add_full" method="post" enctype="multipart/form-data" class="row g-2">
+                    <div class="col-md-3">
+                        <select name="category" class="form-select">
+                            <option value="female" {% if cat == 'female' %}selected{% endif %}>Женская</option>
+                            <option value="male" {% if cat == 'male' %}selected{% endif %}>Мужская</option>
+                            <option value="boy" {% if cat == 'boy' %}selected{% endif %}>Мальчик</option>
+                            <option value="girl" {% if cat == 'girl' %}selected{% endif %}>Девочка</option>
+                            <option value="storefront" {% if cat == 'storefront' %}selected{% endif %}>Витрина</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" name="name" class="form-control" placeholder="Имя модели" required>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="cloth" class="form-select">
+                            <option value="all">Все (all)</option>
+                            <option value="coat">Верхняя одежда</option>
+                            <option value="dress">Платья</option>
+                            <option value="pants">Брюки/Шорты</option>
+                            <option value="top">Топы/Рубашки</option>
+                            <option value="suit">Костюмы</option>
+                            <option value="loungewear">Домашняя одежда</option>
+                            <option value="overall">Комбинезоны</option>
+                            <option value="skirt">Юбки</option>
+                            <option value="shoes">Обувь</option>
+                            <option value="boy">Мальчик (для детей)</option>
+                            <option value="girl">Девочка (для детей)</option>
+                            <option value="female">Для Витрины: Женский</option>
+                            <option value="male">Для Витрины: Мужской</option>
+                            <option value="child">Для Витрины: Детский</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="file" name="photo" class="form-control" accept="image/*">
+                    </div>
+                    <div class="col-md-12">
+                        <textarea name="prompt_text" class="form-control" rows="2" placeholder="Текст промпта" required></textarea>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-success btn-sm">Создать модель</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="form-check">
+                    <input class="form-check-input select-all" type="checkbox" data-cat="{{ cat }}" id="selectAll-{{ cat }}">
+                    <label class="form-check-label small" for="selectAll-{{ cat }}">Выбрать все</label>
+                </div>
+                <button type="button" class="btn btn-danger btn-sm bulk-delete-btn" data-cat="{{ cat }}" style="display: none;">
+                    <i class="bi bi-trash"></i> Удалить выбранные (<span class="count">0</span>)
+                </button>
+            </div>
+
+            <div class="row g-3">
+                {% if categorized_models[cat] %}
+                    {% for m in categorized_models[cat] %}
+                    <div class="col-12 col-lg-6 model-card" data-id="{{ m.id }}">
+                        <div class="card p-3 border-start border-primary border-4 h-100 position-relative">
+                            <div class="position-absolute" style="top: 10px; right: 10px;">
+                                <input type="checkbox" class="form-check-input model-checkbox" data-cat="{{ cat }}" value="{{ m.id }}">
+                            </div>
+                            <form action="/prompts/edit_model" method="post" enctype="multipart/form-data">
+                                <input type="hidden" name="model_id" value="{{ m.id }}">
+                                <div class="row">
+                                    <div class="col-4">
+                                        {% if m.photo_file_id %}
+                                            <div class="position-relative">
+                                                {% if m.photo_file_id.startswith('data/') %}
+                                                    <img src="/{{ m.photo_file_id }}" class="img-fluid rounded mb-2 shadow-sm" alt="Model" style="display: block; width: 100%;">
+                                                    <a href="/{{ m.photo_file_id }}" download="model_{{ m.id }}.jpg" class="btn btn-success btn-sm w-100 mb-2"><i class="bi bi-download"></i> Скачать фото</a>
+                                                {% elif m.photo_file_id.startswith('uploads/') %}
+                                                    <img src="/{{ m.photo_file_id }}" class="img-fluid rounded mb-2 shadow-sm" alt="Model" style="display: block; width: 100%;">
+                                                    <a href="/{{ m.photo_file_id }}" download="model_{{ m.id }}.jpg" class="btn btn-success btn-sm w-100 mb-2"><i class="bi bi-download"></i> Скачать фото</a>
+                                                {% else %}
+                                                    <div class="text-center py-4 bg-light rounded small mb-2">TG Photo<br>{{ m.photo_file_id[:10] }}...</div>
+                                                {% endif %}
+                                                <a href="/models/delete_photo/{{ m.id }}" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 shadow-sm" style="z-index: 10; padding: 2px 6px;" title="Удалить только фото" onclick="return confirm('Удалить только фото?')">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            </div>
+                                        {% else %}
+                                            <div class="text-center py-4 bg-light rounded small mb-2 text-muted">Нет фото</div>
+                                        {% endif %}
+                                        <input type="file" name="photo" class="form-control form-control-sm" accept="image/*">
+                                    </div>
+                                    <div class="col-8">
+                                        <div class="mb-2 d-flex justify-content-between align-items-center">
+                                            <input type="text" name="name" class="form-control form-control-sm fw-bold" value="{{ m.name }}">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <a href="/models/toggle/{{ m.id }}" class="btn btn-sm {% if m.is_active %}btn-success{% else %}btn-secondary{% endif %}" title="Вкл/Выкл">
+                                                    <i class="bi {% if m.is_active %}bi-toggle-on{% else %}bi-toggle-off{% endif %}"></i>
+                                                </a>
+                                                <span class="badge bg-light text-dark">#{{ m.id }}</span>
+                                            </div>
+                                        </div>
+                                        <textarea name="prompt_text" class="form-control mb-2" rows="4" style="font-size: 0.85rem;">{{ m.prompt_text }}</textarea>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="text-muted small">Prompt ID: {{ m.prompt_id }}</div>
+                                            <div class="d-flex gap-2">
+                                                <a href="/models/delete/{{ m.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить модель?')">Удалить</a>
+                                                <button type="submit" class="btn btn-sm btn-primary">Сохранить</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12 text-center py-4 text-muted">В этой категории пока нет моделей.</div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+<form id="bulkDeleteForm" action="/models/delete_bulk" method="post" style="display: none;">
+    <input type="hidden" name="model_ids" id="bulkDeleteIds">
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAlls = document.querySelectorAll('.select-all');
+    const modelCheckboxes = document.querySelectorAll('.model-checkbox');
+    const bulkDeleteBtns = document.querySelectorAll('.bulk-delete-btn');
+    const bulkForm = document.getElementById('bulkDeleteForm');
+    const bulkInput = document.getElementById('bulkDeleteIds');
+
+    function updateBulkUI(cat) {
+        const catCheckboxes = document.querySelectorAll(`.model-checkbox[data-cat="${cat}"]`);
+        const checked = document.querySelectorAll(`.model-checkbox[data-cat="${cat}"]:checked`);
+        const btn = document.querySelector(`.bulk-delete-btn[data-cat="${cat}"]`);
+        const selectAll = document.querySelector(`.select-all[data-cat="${cat}"]`);
+        
+        if (checked.length > 0) {
+            btn.style.display = 'block';
+            btn.querySelector('.count').textContent = checked.length;
+        } else {
+            btn.style.display = 'none';
+        }
+        
+        selectAll.checked = (checked.length === catCheckboxes.length && catCheckboxes.length > 0);
+    }
+
+    selectAlls.forEach(cb => {
+        cb.addEventListener('change', function() {
+            const cat = this.getAttribute('data-cat');
+            document.querySelectorAll(`.model-checkbox[data-cat="${cat}"]`).forEach(mcb => {
+                mcb.checked = this.checked;
+            });
+            updateBulkUI(cat);
+        });
+    });
+
+    modelCheckboxes.forEach(cb => {
+        cb.addEventListener('change', function() {
+            updateBulkUI(this.getAttribute('data-cat'));
+        });
+    });
+
+    bulkDeleteBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const cat = this.getAttribute('data-cat');
+            const checked = document.querySelectorAll(`.model-checkbox[data-cat="${cat}"]:checked`);
+            if (checked.length === 0) return;
+            
+            if (confirm(`Удалить выбранные модели (${checked.length} шт.)?`)) {
+                const ids = Array.from(checked).map(c => mcb = c.value).join(',');
+                bulkInput.value = ids;
+                bulkForm.submit();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

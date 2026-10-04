@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-tools me-2"></i> Конструктор категорий</h2>
+        <button class="btn btn-success btn-round" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+            <i class="bi bi-plus-lg me-1"></i> Добавить категорию
+        </button>
+    </div>
+
+    <div class="row g-3">
+        {% for cat in categories %}
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="card-title mb-0">{{ cat['name_ru'] }}</h5>
+                        <form action="/constructor/category/delete/{{ cat['id'] }}" method="post" onsubmit="return confirm('Удалить категорию и все ее вопросы?')">
+                            <button type="submit" class="btn btn-link text-danger p-0">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                    <p class="card-text text-muted small mb-3">ID: <code>{{ cat['key'] }}</code></p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge {% if cat['is_active'] %}bg-success{% else %}bg-secondary{% endif %}">
+                            {% if cat['is_active'] %}Активна{% else %}Выключена{% endif %}
+                        </span>
+                        <div class="d-flex gap-2">
+                            <form action="/constructor/category/toggle/{{ cat['id'] }}" method="post">
+                                <button type="submit" class="btn btn-sm {{ 'btn-outline-secondary' if cat['is_active'] else 'btn-outline-success' }}">
+                                    {{ 'ВЫКЛ' if cat['is_active'] else 'ВКЛ' }}
+                                </button>
+                            </form>
+                            <a href="/constructor/category/{{ cat['id'] }}" class="btn btn-primary btn-sm btn-round">
+                                Настроить <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    
+    <div class="modal fade" id="addCategoryModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="/constructor/category/add" method="post">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Новая категория</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Название (RU)</label>
+                            <input type="text" name="name" class="form-control" placeholder="Например: Платья" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Ключ (EN, для базы)</label>
+                            <input type="text" name="key" class="form-control" placeholder="Например: dresses" required>
+                            <div class="form-text">Используется во внутренней логике бота</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Порядок (index)</label>
+                            <input type="number" name="order" class="form-control" value="0">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Создать</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-info mt-5">
+        <h5 class="alert-heading"><i class="bi bi-info-circle me-2"></i> Как это работает?</h5>
+        <p class="mb-0">
+            Здесь вы можете редактировать шаги (вопросы), которые бот задает пользователю в каждой категории. 
+            Для каждого шага можно выбрать тип ввода: <b>текст</b>, <b>кнопки</b> или <b>фото</b>. 
+            Если выбраны кнопки, вы сможете добавить варианты ответов.
+        </p>
+    </div>
+</div>
+{% endblock %}
+

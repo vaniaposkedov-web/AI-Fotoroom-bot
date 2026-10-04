@@ -1,0 +1,26 @@
+{% extends "base_site.html" %}
+{% set lang = user.language if user else (request.session.get('preferred_lang') or 'ru') %}
+{% block title %}{{ get_site_string('page_instructions', lang) }} — AI-ROOM{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <div class="card p-4">
+            <h4><i class="bi bi-book"></i> {{ get_site_string('page_instructions', lang) }}</h4>
+            <hr>
+            {% if content %}
+            <div class="content-area" style="white-space: pre-wrap;">{{ content }}</div>
+            {% else %}
+            <p class="text-muted">{{ get_site_string('welcome_subtitle', lang) }}</p>
+            <ol>
+                <li>{{ get_site_string('welcome_step1', lang) }}</li>
+                <li>{{ get_site_string('welcome_step2', lang) }}</li>
+                <li>{{ get_site_string('welcome_step3', lang) }}</li>
+                <li>{{ get_site_string('welcome_format', lang) }}</li>
+                <li>{{ get_site_string('welcome_generate', lang) }}</li>
+            </ol>
+            <p><a href="/welcome" class="btn btn-primary">{{ get_site_string('nav_create', lang) }}</a></p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

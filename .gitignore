@@ -1,0 +1,66 @@
+# Environment — никогда не коммитить секреты
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Runtime data (БД, история генераций, логи)
+data/
+*.db
+*.log
+
+# Бэкапы и служебные файлы
+*.bak
+*.bak_*
+.deploy_backups/
+.backup_cursor*/
+staraya bd/
+
+# Бинарные медиафайлы
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.tar.gz
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Google credentials
+data/vertex_key.json
+data/keys/
+
+# Scripts с конфигами сервера
+scripts/
+
+# Локальные диагностические/деплой скрипты (не часть проекта)
+_check_*.py
+_deploy_*.py
+_diag_*.py
+_quick_deploy.py
+_read_*.py
+_test_*.py
+_remote_*.py
+.remote_bot_db.py
+ssh_*.py
+apply_fix.py
+monitor_logs.py
+watch_repeat.py
+parse_logs*.py
+
+# Локальные диагностические текстовые файлы
+compare.txt
+diag_*.txt
+server_files.txt
+strings_check.txt
+telegram_images.txt

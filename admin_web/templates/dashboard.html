@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row g-3 text-center">
+    <div class="col-6 col-md-3">
+        <div class="card p-3 h-100 shadow-sm border-0">
+            <div class="text-muted small fw-bold text-uppercase">Всего подписчиков</div>
+            <div class="h2 mb-0 py-2">{{ total_users }}</div>
+            <div class="text-success small"><i class="bi bi-people me-1"></i> в базе данных</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card p-3 h-100 shadow-sm border-0">
+            <div class="text-muted small fw-bold text-uppercase">Новые сегодня</div>
+            <div class="h2 mb-0 py-2">{{ today_users }}</div>
+            <div class="text-primary small"><i class="bi bi-person-plus me-1"></i> за 24 часа</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card p-3 h-100 shadow-sm border-0">
+            <div class="text-muted small fw-bold text-uppercase">Генераций сегодня</div>
+            <div class="h2 mb-0 py-2">{{ today_gens }}</div>
+            <div class="text-info small"><i class="bi bi-image me-1"></i> 1K: {{ today_1k }} | 4K: {{ today_4k }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="/balance_history" class="text-decoration-none text-dark">
+            <div class="card p-3 h-100 shadow-sm border-0">
+                <div class="text-muted small fw-bold text-uppercase">Общий баланс</div>
+                <div class="h2 mb-0 py-2">{{ total_balance }} ₽</div>
+                <div class="text-warning small"><i class="bi bi-lightning-charge me-1"></i> история изменений</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card p-3 h-100 shadow-sm border-0" style="border-left: 4px solid #e83e8c !important;">
+            <div class="text-muted small fw-bold text-uppercase">Видео сегодня</div>
+            <div class="h2 mb-0 py-2">{{ today_video_gens }}</div>
+            <div class="small" style="color:#e83e8c"><i class="bi bi-camera-video me-1"></i> видео создано</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="/history?q=video" class="text-decoration-none text-dark">
+            <div class="card p-3 h-100 shadow-sm border-0" style="border-left: 4px solid #6f42c1 !important;">
+                <div class="text-muted small fw-bold text-uppercase">Видео всего</div>
+                <div class="h2 mb-0 py-2">{{ total_video_gens }}</div>
+                <div class="small" style="color:#6f42c1"><i class="bi bi-film me-1"></i> история видео</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="/api_keys" class="text-decoration-none text-dark">
+            <div class="card p-3 h-100 shadow-sm border-0" style="border-left: 4px solid #0d6efd !important;">
+                <div class="text-muted small fw-bold text-uppercase">Zveno API (всего)</div>
+                <div class="h2 mb-0 py-2">{{ total_zveno_calls }}</div>
+                <div class="small text-primary"><i class="bi bi-cpu me-1"></i> API вызовов за всё время</div>
+            </div>
+        </a>
+    </div>
+    
+    <div class="col-12 col-md-6 mt-3 text-start">
+        <div class="card p-3 h-100 shadow-sm border-0">
+            <div class="text-muted small fw-bold text-uppercase mb-2">Статус прокси</div>
+            <div class="fw-bold">{{ proxy_status }}</div>
+            {% if proxy_errors_count > 0 %}
+            <div class="alert alert-warning mt-2 mb-0 p-2 small">
+                <i class="bi bi-exclamation-triangle"></i> Обнаружено {{ proxy_errors_count }} ошибок прокси за последние 24 часа
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-12 col-md-6 mt-3 text-start">
+        <div class="card p-3 h-100 shadow-sm border-danger border-2">
+            <div class="text-muted small fw-bold text-uppercase mb-2">Режим техработ (замораживает подписки)</div>
+            <form action="/maintenance/toggle" method="post" class="mt-1">
+                <button type="submit" class="btn {% if maintenance %}btn-danger{% else %}btn-outline-secondary{% endif %} w-100">
+                    {% if maintenance %}ВКЛЮЧЕНЫ (Остановить и продлить подписки){% else %}ВЫКЛЮЧЕНЫ (Начать){% endif %}
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-6 mt-3 text-start">
+        <div class="card p-3 h-100 shadow-sm border-warning border-2">
+            <div class="text-muted small fw-bold text-uppercase mb-2">Генерация 4K (только фото)</div>
+            <div class="small text-muted mb-2">
+                {% if disable_4k %}
+                    4K скрыт у пользователей: кнопки нет, клики по старым сообщениям и «Повторить» идут в 1K. Видео не затрагивается.
+                {% else %}
+                    4K доступен в ботах (Telegram / VK), включая фотостудию. Видео не затрагивается.
+                {% endif %}
+            </div>
+            <form action="/settings/disable_4k/toggle" method="post" class="mt-1">
+                <button type="submit" class="btn {% if disable_4k %}btn-warning{% else %}btn-success{% endif %} w-100">
+                    {% if disable_4k %}4K ВЫКЛЮЧЕН (Включить){% else %}4K ВКЛЮЧЕН (Выключить){% endif %}
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow-sm border-info border-1">
+            <div class="card-header bg-info bg-opacity-10">
+                <h5 class="mb-0"><i class="bi bi-info-circle text-info"></i> Расшифровка кодов ошибок генерации</h5>
+            </div>
+            <div class="card-body p-2">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0 align-middle">
+                        <thead>
+                            <tr>
+                                <th>Код</th>
+                                <th>Что означает</th>
+                                <th>Что делать</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>all_keys_busy</code></td>
+                                <td>Все активные ключи заняты запросами прямо сейчас.</td>
+                                <td>Добавить ключи/уменьшить параллельную нагрузку, повтор через 10-20 сек.</td>
+                            </tr>
+                            <tr>
+                                <td><code>generation_timeout</code></td>
+                                <td>Генерация не уложилась в таймаут ожидания.</td>
+                                <td>Проверить нагрузку, прокси, время ответа API и сложность промпта.</td>
+                            </tr>
+                            <tr>
+                                <td><code>empty_result</code></td>
+                                <td>API вернул ответ без изображения.</td>
+                                <td>Смягчить промпт/заменить фото, проверить ограничения safety.</td>
+                            </tr>
+                            <tr>
+                                <td><code>input_photo_download_failed</code></td>
+                                <td>Бот не смог скачать входные фото пользователя.</td>
+                                <td>Попросить отправить фото заново, проверить доступность Telegram/VK файлов.</td>
+                            </tr>
+                            <tr>
+                                <td><code>429</code>, <code>quota</code></td>
+                                <td>Лимиты ключа исчерпаны (rate limit / quota).</td>
+                                <td>Включить резервные ключи, проверить биллинг и лимиты проекта.</td>
+                            </tr>
+                            <tr>
+                                <td><code>key_invalid</code>, <code>key_suspended</code>, <code>permission_denied</code></td>
+                                <td>Проблема самого ключа или прав проекта.</td>
+                                <td>Заменить ключ, проверить доступ к API и проект Google Cloud.</td>
+                            </tr>
+                            <tr>
+                                <td><code>critical_exception:...</code>, <code>unclassified_exception:...</code></td>
+                                <td>Необработанное исключение в коде бота.</td>
+                                <td>Сразу смотреть логи контейнера `bot` в момент ошибки по времени.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if recent_errors %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow-sm border-warning border-2">
+            <div class="card-header bg-warning bg-opacity-10">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle text-warning"></i> Последние ошибки API ключей</h5>
+            </div>
+            <div class="card-body p-2">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Key ID</th>
+                                <th>Key Preview</th>
+                                <th>Тип ошибки</th>
+                                <th>Статус</th>
+                                <th>Сообщение</th>
+                                <th>Время</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for err in recent_errors %}
+                            <tr class="{% if err[5] == 1 %}table-warning{% elif err[2] == '429' or err[2] == 'quota' %}table-danger{% endif %}">
+                                <td>{{ err[0] or 'N/A' }}</td>
+                                <td><code>{{ err[1] }}</code></td>
+                                <td>
+                                    {% if err[2] == '429' %}
+                                        <span class="badge bg-danger">429 Rate Limit</span>
+                                    {% elif err[2] == 'quota' %}
+                                        <span class="badge bg-danger">Quota</span>
+                                    {% elif err[2] == 'proxy' %}
+                                        <span class="badge bg-warning">Proxy</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ err[2] }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ err[4] or 'N/A' }}</td>
+                                <td><small>{{ err[3][:100] }}{% if err[3]|length > 100 %}...{% endif %}</small></td>
+                                <td><small>{{ err[6][:16].replace('T', ' ') if err[6] else 'N/A' }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="mt-4">
+    <h4>Быстрые действия</h4>
+    <div class="list-group shadow-sm">
+    <a href="/users" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3">
+        <span><i class="bi bi-person-plus me-2 text-primary"></i> Управление пользователями и подписками</span>
+        <i class="bi bi-chevron-right"></i>
+    </a>
+        <a href="/prompts" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3">
+            <span><i class="bi bi-pencil-square me-2 text-warning"></i> Редактировать промпты</span>
+            <i class="bi bi-chevron-right"></i>
+        </a>
+        <a href="/constructor" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3">
+            <span><i class="bi bi-tools me-2 text-info"></i> Конструктор форм и категорий</span>
+            <i class="bi bi-chevron-right"></i>
+        </a>
+        <a href="/prices" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3">
+            <span><i class="bi bi-tags me-2 text-success"></i> Изменить цены</span>
+            <i class="bi bi-chevron-right"></i>
+        </a>
+    </div>
+</div>
+{% endblock %}
+

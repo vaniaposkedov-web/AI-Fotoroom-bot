@@ -1,0 +1,25 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.sqlite
+*.db
+.env
+.git
+.gitignore
+.vscode
+.idea
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.mypy_cache
+**/.pytest_cache
+**/.ruff_cache
+**/.venv
+.venv
+node_modules
+
+# logs
+logs
+**/logs

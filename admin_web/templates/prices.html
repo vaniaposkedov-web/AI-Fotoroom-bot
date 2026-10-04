@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card p-4">
+    <h4 class="mb-4"><i class="bi bi-currency-dollar me-2"></i> Управление ценами и планами</h4>
+
+    <h5 class="mt-4 mb-3">💎 Тарифные планы (Подписки)</h5>
+    <div class="row g-3">
+        {% for plan in plans %}
+        <div class="col-12 col-xl-6">
+            <div class="card p-3 border-start border-success border-4 h-100">
+                <form action="/plans/edit" method="post">
+                    <input type="hidden" name="plan_id" value="{{ plan.id }}">
+                    <div class="row g-2">
+                        <div class="col-12 col-md-4">
+                            <label class="form-label small mb-0">Название (RU)</label>
+                            <input type="text" name="name_ru" class="form-control form-control-sm fw-bold" value="{{ plan.name_ru }}">
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label small mb-0">Name (EN)</label>
+                            <input type="text" name="name_en" class="form-control form-control-sm" value="{{ plan.name_en }}">
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label small mb-0">Tên (VI)</label>
+                            <input type="text" name="name_vi" class="form-control form-control-sm" value="{{ plan.name_vi }}">
+                        </div>
+
+                        <div class="col-4">
+                            <label class="form-label small mb-0">Цена (₽)</label>
+                            <input type="number" name="price" class="form-control form-control-sm" value="{{ plan.price }}">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label small mb-0">Дни</label>
+                            <input type="number" name="duration" class="form-control form-control-sm" value="{{ plan.duration_days }}">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label small mb-0">Лимит/день</label>
+                            <input type="number" name="limit" class="form-control form-control-sm" value="{{ plan.daily_limit }}">
+                        </div>
+
+                        <div class="col-12 col-md-4">
+                            <label class="form-label small mb-0">Описание (RU)</label>
+                            <textarea name="desc_ru" class="form-control form-control-sm" rows="3">{{ plan.description_ru }}</textarea>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label small mb-0">Description (EN)</label>
+                            <textarea name="desc_en" class="form-control form-control-sm" rows="3">{{ plan.description_en }}</textarea>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label small mb-0">Mô tả (VI)</label>
+                            <textarea name="desc_vi" class="form-control form-control-sm" rows="3">{{ plan.description_vi }}</textarea>
+                        </div>
+
+                        <div class="col-12 mt-2">
+                            <button type="submit" class="btn btn-sm btn-success w-100">Сохранить план</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <hr class="my-5">
+
+    <h5 class="mb-3">⚙️ Управление категориями</h5>
+    <div class="alert alert-info py-2">
+        <small>Отключенная категория скрывается в боте.</small>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle bg-white border">
+            <thead class="table-light">
+                <tr>
+                    <th>Категория</th>
+                    <th class="text-center">Статус</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in category_status %}
+                <tr>
+                    <td><code>{{ item.cat }}</code></td>
+                    <td class="text-center">
+                        <form action="/categories/toggle" method="post">
+                            <input type="hidden" name="key" value="{{ item.status_key }}">
+                            <button type="submit" class="btn btn-sm {% if item.is_enabled %}btn-success{% else %}btn-secondary{% endif %} px-3">
+                                {% if item.is_enabled %}Включена{% else %}Отключена{% endif %}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

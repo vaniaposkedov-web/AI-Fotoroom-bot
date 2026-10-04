@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card p-3 mb-4 bg-dark text-white">
+    <h5 class="mb-3">Добавить новую кнопку (модель)</h5>
+    <form action="/models/add" method="post" class="row g-2">
+        <div class="col-md-3">
+            <select name="category" class="form-select form-select-sm" required>
+                <option value="female">Female</option>
+                <option value="male">Male</option>
+                <option value="child">Child</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select name="cloth" class="form-select form-select-sm" required>
+                <option value="coat">Верхняя одежда</option>
+                <option value="dress">Платья</option>
+                <option value="pants">Брюки/Шорты</option>
+                <option value="top">Топы/Рубашки</option>
+                <option value="suit">Костюмы</option>
+                <option value="shoes">Обувь</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <input type="text" name="name" class="form-control form-control-sm" placeholder="Название кнопки" required>
+        </div>
+        <div class="col-md-3">
+            <select name="prompt_id" class="form-select form-select-sm" required>
+                {% for p in prompts %}
+                <option value="{{ p.id }}">{{ p.title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-12 mt-2">
+            <button type="submit" class="btn btn-primary btn-sm w-100">Добавить модель</button>
+        </div>
+    </form>
+</div>
+
+<h4 class="mb-3 d-flex justify-content-between align-items-center">
+    <span>Существующие кнопки</span>
+    <button type="button" class="btn btn-danger btn-sm" id="bulkDeleteBtn" style="display: none;">
+        Удалить выбранные (<span id="checkedCount">0</span>)
+    </button>
+</h4>
+<div class="table-responsive bg-white rounded shadow-sm">
+    <table class="table table-sm table-hover align-middle mb-0">
+        <thead class="table-light">
+            <tr>
+                <th style="width: 40px;"><input type="checkbox" class="form-check-input" id="selectAll"></th>
+                <th>Категория</th>
+                <th>Тип</th>
+                <th>Название</th>
+                <th>Промпт</th>
+                <th class="text-end">Удалить</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in models %}
+            <tr>
+                <td><input type="checkbox" class="form-check-input model-checkbox" value="{{ m.id }}"></td>
+                <td>{{ m.category }}</td>
+                <td>{{ m.cloth }}</td>
+                <td>{{ m.name }}</td>
+                <td><small>{{ m.prompt_title }}</small></td>
+                <td class="text-end">
+                    <a href="/models/delete/{{ m.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить эту кнопку?')"><i class="bi bi-trash"></i></a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<form id="bulkDeleteForm" action="/models/delete_bulk" method="post" style="display: none;">
+    <input type="hidden" name="model_ids" id="bulkDeleteIds">
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.model-checkbox');
+    const bulkBtn = document.getElementById('bulkDeleteBtn');
+    const countSpan = document.getElementById('checkedCount');
+    const bulkForm = document.getElementById('bulkDeleteForm');
+    const bulkInput = document.getElementById('bulkDeleteIds');
+
+    function updateUI() {
+        const checked = document.querySelectorAll('.model-checkbox:checked');
+        if (checked.length > 0) {
+            bulkBtn.style.display = 'block';
+            countSpan.textContent = checked.length;
+        } else {
+            bulkBtn.style.display = 'none';
+        }
+        selectAll.checked = (checked.length === checkboxes.length && checkboxes.length > 0);
+    }
+
+    selectAll.addEventListener('change', function() {
+        checkboxes.forEach(cb => cb.checked = this.checked);
+        updateUI();
+    });
+
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', updateUI);
+    });
+
+    bulkBtn.addEventListener('click', function() {
+        const checked = document.querySelectorAll('.model-checkbox:checked');
+        if (confirm(`Удалить выбранные кнопки (${checked.length} шт.)?`)) {
+            const ids = Array.from(checked).map(cb => cb.value).join(',');
+            bulkInput.value = ids;
+            bulkForm.submit();
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base_site.html" %}
+{% set lang = user.language if user else (request.session.get('preferred_lang') or 'ru') %}
+{% block title %}{{ get_site_string('page_support', lang) }} — AI-ROOM{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card p-4">
+            <h4><i class="bi bi-headset"></i> {{ get_site_string('support_title', lang) }}</h4>
+            <p class="text-muted mb-3">{{ get_site_string('support_text', lang) }}</p>
+            <p class="fs-5"><a href="mailto:{{ contact }}" class="text-success">{{ contact }}</a></p>
+            {% if 't.me' in contact or contact.startswith('@') %}
+            <p><a href="{{ contact if contact.startswith('http') else 'https://t.me/' + contact.replace('@','') }}" class="btn btn-primary" target="_blank"><i class="bi bi-send"></i> {{ get_site_string('footer_support', lang) }}</a></p>
+            {% else %}
+            <p><a href="mailto:{{ contact }}" class="btn btn-primary"><i class="bi bi-envelope"></i> {{ get_site_string('footer_support', lang) }}</a></p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
